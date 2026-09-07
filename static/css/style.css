@@ -43,11 +43,18 @@ h1, .brand {
 }
 
 .site-header {
+    position: fixed;
+    top: 20px;
     width: 85%;
     max-width:960px;
     margin: 0 auto;
-    border-bottom: 2px solid var(--line);
     padding: 1rem 0;
+    border-radius: 7px;
+
+    background-color: rgba(9, 9, 11, 0.9);
+    left: 50%;
+    transform: translateX(-50%);
+    z-index: 9999;
 }
 
 .site-header .container {
@@ -59,24 +66,28 @@ h1, .brand {
 }
 
 .brand {
-    font-size: 1.3rem;
+    font-size: 1rem;
     font-weight: 700;
-    color: var(--ink);
+    color: var(--line);
     text-decoration: none;
+    margin-left: 2rem;
 }
 
 .site-header nav {
     display: flex;
-    gap: 2rem;
+    gap: 0rem;
 }
 
 .site-header nav a {
-    color: var(--ink);
+    color: var(--line);
+    margin-right: 2rem;
     text-decoration: none;
     font-size: 0.95rem;
 }
 
 .hero {
+    padding-top: 8rem;
+    padding-bottom: 5rem;
     padding: 4.5rem 0 5rem;
 }
 
@@ -100,6 +111,7 @@ h1, .brand {
 }
 
 .hero-kicker {
+    margin-top: 60px;
     font-size: 0.85rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
@@ -165,23 +177,26 @@ h1, .brand {
     position: relative;
 }
 
-/* .photo-block {
+.photo-block {
     position: absolute;
+    margin-top: 30px;
     top: 1.25rem;
     left: 1rem;
-    width: 100%;
-    height: 100%;
-    background-color: var(--accent);
+    width: 99%;
+    height: 92%;
+    background-color: rgba(9, 9, 11, 0.4);
     border-radius: 15px;
     z-index: 0;
-} */
+}
 
 .avatar {
     position: relative;
+    margin-top: 30px;
     z-index: 1;
     display: block;
     width: 100%;
-    aspect-ratio: 1 / 1;
+    aspect-ratio: 3 / 4;
+    max-height: 430px;
     object-fit: cover;
     border-radius: 15px;
     /* border: 5px solid var(--ink); */
@@ -228,7 +243,6 @@ h1, .brand {
 .ul-experience {
     display: flex;
     margin-top: 0.5rem;
-    max-width: 100%;
     gap: 1rem;
 }
 

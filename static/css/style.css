@@ -19,6 +19,11 @@ body {
     color: var(--ink);
     background-color: var(--paper);
     line-height: 1.6;
+    /* background-image: linear-gradient(90deg, rgba(255,255,255,0.05) 50%, rgba(0,0,0,0.03) 50%),
+        linear-gradient(0deg, rgba(255,255,255,0.05) 50%, rgba(0,0,0,0.03) 50%);
+    background-size: 4px 4px; 
+    border: 1px solid #e3dcd0;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.05); */
 }
 
 h1, .brand {
@@ -188,6 +193,7 @@ h1, .brand {
     font-size: 0.85rem;
     margin: 0 auto 2rem auto;
     border-top: 2px solid var(--line);
+    width: 85%;
 }
 
 /* SEMUA EXPERIENCE MULAINYA DI SINI */
@@ -203,6 +209,7 @@ h1, .brand {
 }
 
 .dt-experience {
+    width: 85%;
     color: black;
     text-align-last: center;
     margin-top: 2rem;

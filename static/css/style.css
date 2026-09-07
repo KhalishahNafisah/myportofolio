@@ -5,41 +5,52 @@
 }
 
 :root {
-    --ink: #1c1917;
-    --paper: #faf6f0;
-    --accent: #d95d39;
-    --accent-dark: #a8442a;
-    --line: #e3d9c9;
-    --text-muted: #6b6459;
+    --ink: #0B192C;
+    --paper: #F8F8F8;
+    --accent: #595959;
+    --accent-dark: #595959; 
+    --line: #D8E4EE;
+    --text-muted: #595959;
     --radius: 4px;
 }
 
 body {
-    font-family: -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: "Helvetica Neue", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     color: var(--ink);
     background-color: var(--paper);
     line-height: 1.6;
 }
 
 h1, .brand {
-    font-family: "Space Grotesk", -apple-system, sans-serif;
+    color:#595959;
+    font-family: "Helvetica Neue", "Space Grotesk", -apple-system, sans-serif;
+}
+
+.name-accent {
+    color: #000;
 }
 
 .container {
+    width: 85%;
     max-width: 960px;
     margin: 0 auto;
-    padding: 0 1.5rem;
+    padding: 0;
 }
 
 .site-header {
-    border-bottom: 1px solid var(--line);
+    width: 85%;
+    max-width:960px;
+    margin: 0 auto;
+    border-bottom: 2px solid var(--line);
+    padding: 1rem 0;
 }
 
 .site-header .container {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 1.25rem 1.5rem;
+    padding: 0;
+    width: 100%;
 }
 
 .brand {
@@ -78,6 +89,8 @@ h1, .brand {
 }
 
 .hero-details {
+    font-size:1rem;
+    font-weight: 500;
     grid-area: details;
 }
 
@@ -85,7 +98,7 @@ h1, .brand {
     font-size: 0.85rem;
     letter-spacing: 0.08em;
     text-transform: uppercase;
-    color: var(--accent-dark);
+    color: var(--ink);
     font-weight: 700;
     margin-bottom: 0.75rem;
 }
@@ -132,8 +145,8 @@ h1, .brand {
     text-decoration: none;
     color: var(--paper);
     background-color: var(--ink);
-    border-radius: var(--radius);
-    padding: 0.5rem 1.1rem;
+    border-radius: 7px;
+    padding: 0.4rem 1.0rem;
     transition: background-color 0.2s ease;
 }
 
@@ -147,16 +160,16 @@ h1, .brand {
     position: relative;
 }
 
-.photo-block {
+/* .photo-block {
     position: absolute;
     top: 1.25rem;
-    left: 1.25rem;
+    left: 1rem;
     width: 100%;
     height: 100%;
     background-color: var(--accent);
-    border-radius: var(--radius);
+    border-radius: 15px;
     z-index: 0;
-}
+} */
 
 .avatar {
     position: relative;
@@ -165,16 +178,73 @@ h1, .brand {
     width: 100%;
     aspect-ratio: 1 / 1;
     object-fit: cover;
-    border-radius: var(--radius);
-    border: 3px solid var(--ink);
+    border-radius: 15px;
+    /* border: 5px solid var(--ink); */
 }
 
 .site-footer {
     padding: 1.5rem;
     color: var(--text-muted);
     font-size: 0.85rem;
-    border-top: 1px solid var(--line);
+    margin: 0 auto 2rem auto;
+    border-top: 2px solid var(--line);
 }
+
+/* SEMUA EXPERIENCE MULAINYA DI SINI */
+
+.Experience-Information {
+    border-top: 2px solid var(--line);
+    margin: 0 auto 2rem auto;
+    margin-top: 5rem;
+    width: 85%;
+    padding: 0.5rem;
+    color: var(--accent);
+    
+}
+
+.dt-experience {
+    color: black;
+    text-align-last: center;
+    margin-top: 2rem;
+    font-size: 1.5rem;
+    font-weight: 600;
+}
+
+.dd-experience {
+    margin-top: 2rem;
+    color: black;
+    font-weight: 500;
+}
+
+.ul-experience {
+    display: flex;
+    margin-top: 0.5rem;
+    max-width: 100%;
+    gap: 1rem;
+}
+
+.li-experience {
+    justify-content: space-between;
+    border: 2px solid black;
+    border-radius: 10px;
+    padding: 1rem 1rem;
+    color: var(--accent-dark);
+    list-style-type: none;
+}
+
+/* .photo-director-comprof {
+    margin-top: 1rem;
+    position: relative;
+    z-index: 1;
+    display: block;
+    width: 60%;
+    max-width: 500px;
+    aspect-ratio: 1 / 1;
+    object-fit: cover;
+    border-radius: 15px;
+} */
+
+/* SEMUA EXPERIENCE SELESAINYA DI SINI */
 
 @media (max-width: 600px) {
     .hero-grid {

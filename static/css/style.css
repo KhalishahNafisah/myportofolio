@@ -189,6 +189,7 @@ h1, .brand {
 
 .site-footer {
     padding: 1.5rem;
+    max-width: 960px;
     color: var(--text-muted);
     font-size: 0.85rem;
     margin: 0 auto 2rem auto;
@@ -203,6 +204,7 @@ h1, .brand {
     margin: 0 auto 2rem auto;
     margin-top: 5rem;
     width: 85%;
+    max-width: 960px;
     padding: 0.5rem;
     color: var(--accent);
     

@@ -7,15 +7,15 @@
 :root {
     --ink: #181613;
     --paper: #f4f1eb;
-    --accent: #595959;
+    --accent: #d1c4b9;
     --accent-dark: #595959; 
-    --line: #D8E4EE;
+    --line: #181613;
     --text-muted: #595959;
     --radius: 4px;
 }
 
 body {
-    font-family: "Helvetica Neue", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-family: "Calluna", "Helvetica Neue", -apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
     color: var(--ink);
     background-color: var(--paper);
     line-height: 1.6;
@@ -27,8 +27,8 @@ body {
 }
 
 h1, .brand {
-    color:#595959;
-    font-family: "Helvetica Neue", "Space Grotesk", -apple-system, sans-serif;
+    color: var(--accent);
+    font-family: "Calluna", "Helvetica Neue", "Space Grotesk", -apple-system, sans-serif;
 }
 
 .name-accent {
@@ -46,14 +46,15 @@ h1, .brand {
 }
 
 .site-header {
+    font-family: "Calluna";
     position: fixed;
     width: 100%;
-    /* margin: 0 auto; */
     padding: 1rem 0;
 
-    background-color: rgba(9, 9, 11, 0.95);
-    /* left: 50%; */
-    /* transform: translateX(-50%); */
+    background-color: var(--paper);
+    border-bottom: 1px solid var(--accent);
+    box-shadow: 0 3px 6px -4px rgba(0, 0, 0, 0.1);
+
     z-index: 9999;
 }
 
@@ -61,34 +62,34 @@ h1, .brand {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 0;
-    width: 100%;
 }
 
 .brand {
+    font-family: "Calluna";
     font-size: 1rem;
     font-weight: 700;
-    color: var(--line);
+    color: var(--ink);
     text-decoration: none;
-    margin-left: 2rem;
+    /* margin-left: 2rem; */
 }
 
 .site-header nav {
+    position: absolute;
+    left: 50%;
+    width: 70%;
     display: flex;
-    gap: 0rem;
+    gap: 3.9rem;
 }
 
 .site-header nav a {
-    color: var(--line);
-    margin-right: 2rem;
+    color: var(--ink);
+    /* margin-right: 2rem; */
     text-decoration: none;
     font-size: 0.95rem;
 }
 
 .hero {
-    padding-top: 8rem;
-    padding-bottom: 5rem;
-    padding: 4.5rem 0 5rem;
+    padding: 3rem 0 5rem;
 }
 
 .hero-grid {
@@ -194,33 +195,29 @@ h1, .brand {
 .avatar {
     position: relative;
     box-shadow: 0px 4px 10px rgba(0, 0, 0, 0.4);
-    margin-top: 30px;
+    margin-top: 55px;
     z-index: 1;
     display: block;
     width: 100%;
     aspect-ratio: 3 / 4;
     max-height: 430px;
     object-fit: cover;
-    border-radius: 15px;
     /* border: 5px solid var(--ink); */
 }
 
 .site-footer {
-    padding: 1.5rem;
-    max-width: 960px;
+    padding: 1rem;
     color: var(--text-muted);
     font-size: 0.85rem;
-    margin: 0 auto 2rem auto;
-    border-top: 2px solid var(--line);
-    width: 85%;
+    margin: 0 auto 0rem auto;
+    border-top: 1px solid var(--accent);
 }
 
 /* SEMUA EXPERIENCE MULAINYA DI SINI */
 
 .Experience-Information {
-    border-top: 2px solid var(--line);
-    margin: 0 auto 2rem auto;
-    margin-top: 5rem;
+    border-top: 1px solid var(--accent);
+    margin: 5rem auto 2rem auto;
     width: 85%;
     max-width: 960px;
     padding: 0.5rem;

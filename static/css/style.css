@@ -5,8 +5,8 @@
 }
 
 :root {
-    --ink: #0B192C;
-    --paper: #F8F8F8;
+    --ink: #181613;
+    --paper: #f4f1eb;
     --accent: #595959;
     --accent-dark: #595959; 
     --line: #D8E4EE;
@@ -47,16 +47,13 @@ h1, .brand {
 
 .site-header {
     position: fixed;
-    top: 20px;
-    width: 85%;
-    max-width:960px;
-    margin: 0 auto;
+    width: 100%;
+    /* margin: 0 auto; */
     padding: 1rem 0;
-    border-radius: 7px;
 
-    background-color: rgba(9, 9, 11, 0.9);
-    left: 50%;
-    transform: translateX(-50%);
+    background-color: rgba(9, 9, 11, 0.95);
+    /* left: 50%; */
+    /* transform: translateX(-50%); */
     z-index: 9999;
 }
 

@@ -383,9 +383,8 @@ a:focus-visible, summary:focus-visible {
 }
 
 .about-copy .handwritten {
-    color: var(--burgundy);
-    margin-top: 26px;
-    margin-bottom: 0;
+    margin-top: 2rem;
+    aspect-ratio: 16/5;
 }
 
 .tags {

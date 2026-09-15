@@ -1,0 +1,19 @@
+<section class="section container" id="projects">
+    <div class="section-heading">
+        <div><p class="eyebrow">03 / Selected projects</p><h2>Ideas taking shape.<br><em>Projects brought to life.</em></h2></div>
+        <p class="section-aside">A selection of things I’ve helped create.</p>
+    </div>
+    <div class="work-grid">
+        {% for project in project_list %}
+        <article class="experience-card">
+            <span class="experience-category">{{ project.get_category_display }}</span>
+            <h2>{{ project.title }}</h2>
+            <p class="experience-description">{{ project.description|truncatewords:35 }}</p>
+            <p class="experience-status">{{ project.year }}</p>
+        </article>
+        {% empty %}
+        <p class="empty-state">New projects are on the way. Stay curious.</p>
+        {% endfor %}
+    </div>
+    {% include 'includes/section_link.html' with page_name='main:show_projects' section_name='projects' %}
+</section>

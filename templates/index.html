@@ -1,121 +1,75 @@
+{% load static %}
 <!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ name }} Nafisah - Portfolio</title>
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="/static/css/style.css">
+    <meta name="description" content="Khalishah Nafisah — Information Systems student at Universitas Indonesia. A collection of work, experiences, and life along the way.">
+    <title>Khalishah Nafisah — A curious mind</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
 </head>
-<body class ="home-page">
-    <header class="site-header">
-        <div class="container">
-            <a href="{% url 'main:show_main' %}" class="brand">{{ logo }}</a>
-            <nav>
-                <a href="{% url 'main:show_main' %}">Home</a>
-                <a href="{% url 'main:show_experience' %}">Work</a>
-                <a href="{% url 'main:show_projects' %}">Projects</a>
-                <a href="{% url 'main:show_main' %}#thoughts">Journal</a>
-                <a href="mailto:Khalishahnafisa1@gmail.com">Contact</a>
-            </nav>
-        </div>
-    </header>
-
-    <main>
-    <section class="home-hero" id="profile">
-        <div class="container home-hero-grid">
-
-            <!-- KOLOM KIRI: INTRO -->
-            <div class="home-intro">
-                <p class="home-greeting">Hi, I’m</p>
-
-                <h1 class="home-name">
-                    Khalishah Nafisah<span>.</span>
-                </h1>
-
-                <p class="home-tagline">
-                    A curious mind.<br>
-                    A thoughtful doer.
-                </p>
-
-                <p class="home-description">
-                    I’m an Information Systems student who enjoys
-                    connecting people, ideas, and technology.
-                    This is where I share what I’m building,
-                    what I’m learning, and a little of life along the way.
-                </p>
-
-                <div class="home-actions">
-                    <a href="{% url 'main:show_projects' %}"
-                    class="home-button">
-                        Explore my work <span aria-hidden="true">↗</span>
-                    </a>
-
-                    <a href="#my-story" class="home-text-link">
-                        Get to know me
-                    </a>
+<body>
+    <a class="skip-link" href="#main">Skip to content</a>
+    {% include 'includes/header.html' %}
+    <main id="main">
+        <section class="hero container" id="home">
+            <div class="hero-copy">
+                <p class="eyebrow">Information Systems - Universitas Indonesia</p>
+                <p class="greeting">Hi, I'm</p>
+                <h1>Khalishah Nafisah<span class="accent">.</span></h1>
+                <!-- <p class="tagline">A curious mind.<br><em>A thoughtful doer.</em></p> -->
+                <p class="intro">I study Information Systems, with most of my curiosity leading me toward product and project management. To me, understanding how things are built matters just as much as knowing what to build.</p>
+                <dl class="profile-meta">
+                    <div><dt>Program</dt><dd>S1 Sistem Informasi</dd></div>
+                    <div><dt>NPM</dt><dd>2506605840</dd></div>
+                </dl>
+                <div class="actions">
+                    <a class="button" href="{% url 'main:show_experience' %}">Explore my work <span aria-hidden="true">↗</span></a>
+                    <div class="profile-socials" aria-label="Social profiles">
+                        <a class="social-icon" href="https://github.com/KhalishahNafisah" target="_blank" rel="noopener noreferrer" aria-label="GitHub (opens in a new tab)" title="GitHub">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M12 .75a11.25 11.25 0 0 0-3.56 21.92c.56.1.77-.24.77-.54v-2.1c-3.13.68-3.79-1.33-3.79-1.33-.51-1.3-1.25-1.65-1.25-1.65-1.02-.7.08-.69.08-.69 1.13.08 1.72 1.16 1.72 1.16 1 1.72 2.64 1.22 3.28.93.1-.73.39-1.22.71-1.5-2.5-.28-5.13-1.25-5.13-5.56 0-1.23.44-2.24 1.16-3.03-.12-.28-.5-1.43.11-2.98 0 0 .95-.3 3.09 1.16A10.8 10.8 0 0 1 12 6.16c.96 0 1.91.13 2.81.38 2.14-1.46 3.08-1.16 3.08-1.16.62 1.55.23 2.7.12 2.98.72.79 1.15 1.8 1.15 3.03 0 4.32-2.63 5.28-5.14 5.56.4.35.76 1.03.76 2.08v3.1c0 .3.2.65.78.54A11.25 11.25 0 0 0 12 .75Z"/></svg>
+                        </a>
+                        <a class="social-icon" href="https://www.linkedin.com/in/khalishah-nafisah-a0363a354/" target="_blank" rel="noopener noreferrer" aria-label="LinkedIn (opens in a new tab)" title="LinkedIn">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" fill="currentColor"><path d="M5.37 24H.4V7.98h4.97ZM2.88 5.8a2.88 2.88 0 1 1 0-5.76 2.88 2.88 0 0 1 0 5.76ZM24 24h-4.96v-7.8c0-1.86-.04-4.25-2.59-4.25-2.59 0-2.99 2.03-2.99 4.11V24H8.5V7.98h4.76v2.19h.07c.66-1.26 2.28-2.59 4.7-2.59 5.03 0 5.97 3.31 5.97 7.61Z"/></svg>
+                        </a>
+                        <a class="social-icon" href="https://www.instagram.com/naflica/" target="_blank" rel="noopener noreferrer" aria-label="Instagram (opens in a new tab)" title="Instagram">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="3" width="18" height="18" rx="5"/><circle cx="12" cy="12" r="4"/><circle cx="17.5" cy="6.5" r="1" fill="currentColor" stroke="none"/></svg>
+                        </a>
+                        <a class="social-icon" href="mailto:khalishahnafisa1@gmail.com" aria-label="Email Khalishah" title="Email">
+                            <svg viewBox="0 0 24 24" aria-hidden="true" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"><rect x="2.5" y="4.5" width="19" height="15" rx="2"/><path d="m3.5 6 8.5 7 8.5-7"/></svg>
+                        </a>
+                    </div>
                 </div>
             </div>
-
-            <!-- KOLOM KANAN: FOTO -->
-            <figure class="home-portrait">
-                <img
-                    src="/static/img/KhalishahNafisah.png"
-                    alt="Khalishah Nafisah"
-                    class="home-photo"
-                >
-
-                <figcaption class="home-photo-note">
-                    Always curious,<br>
-                    still becoming.
-                </figcaption>
-            </figure>
-
+            <div class="hero-collage">
+                <span class="handwritten hero-note">I believe there's always<br>more to become.</span>
+                <figure class="portrait"><div class="photo-slot"><img src="static/img/KhalishahNafisah.png" alt="Khalishah Nafisah"></div></figure>
+                <!-- <div class="small-print">PEOPLE.<br>IDEAS.<br>POSSIBILITIES.</div> -->
+                <figure class="polaroid"><div class="photo-slot"><img src="static/img/MeWithJakun.JPG" alt="Khalishah with Jakun"></div><figcaption>JKT, ID.</figcaption></figure>
+            </div>
+        </section>
+        <div class="interlude container">
+            <ul class="tool-list" aria-label="Languages and tools">
+                <li><span class="tool-icon"><img src="{% static 'img/tools/python.svg' %}" alt="" width="20" height="20"></span></li>
+                <li><span class="tool-icon"><img src="{% static 'img/tools/java.svg' %}" alt="" width="20" height="20"></span></li>
+                <li><span class="tool-icon"><img src="{% static 'img/tools/html5.svg' %}" alt="" width="20" height="20"></span></li>
+                <li><span class="tool-icon"><img src="{% static 'img/tools/figma.svg' %}" alt="" width="20" height="20"></span></li>
+                <li><span class="tool-icon"><img src="{% static 'img/tools/css3.svg' %}" alt="" width="20" height="20"></span></li>
+                <li><span class="tool-icon"><img src="{% static 'img/tools/git.svg' %}" alt="" width="20" height="20"></span></li>
+                <li><span class="tool-icon"><img src="{% static 'img/tools/github.svg' %}" alt="" width="20" height="20"></span></li>
+            </ul>
         </div>
-    </section>
 
+        {% include 'includes/about.html' %}
 
-            <!-- CODE EXPERIENCE MULAINYA DI SINI -->
-            <section class="Experience-Information" id="my-story">
-                <div class="divExperience">
-                    <p class="dt-experience"><span class="experience-desc">I've learned that the best parts of my journey often begin with a simple yes, so here are the </span> <span class = "experiences-bold">experiences </span> <img class = "img-experience" src="/static/img/imgexperiencetext.png"/><span class="experience-desc"> that have shaped where I am today.</span></p>
-                    
-                    <!-- MULAI KONTEN RISTEK Fasilkom UI -->
-                    <dd class="dd-experience">RISTEK Fasilkom UI</dd>
-                    <ul class="ul-experience">
-                        <li class="li-experience">Members of Marketing and Communication Division</li>
-                        <li class="li-experience">Project Director RISTALK Seminar 2026</li>
-                        <li class="li-experience">Director of Company Profile Video RISTEK 2026</li>
-                        <li class="li-experience">PIC Datathon from Marcomms 2026</li>
-                    </ul>
-                    <!-- SELESAI KONTEN RISTEK Fasilkom UI -->
+        {% include 'includes/selected_work.html' %}
 
-                    <!-- MULAI KONTEN OPEN HOUSE -->
-                     <dd class="dd-experience">Open House Fasilkom UI</dd>
-                    <ul class="ul-experience">
-                        <li class="li-experience">Staff of Liaison Officer 2025</li>
-                        <li class="li-experience">PIC of Liaison Officer 2026</li>
-                    </ul>
-                    <!-- SELESAI KONTEN OPEN HOUSE -->
+        {% include 'includes/projects.html' %}
 
-                    <!-- MULAI KONTEN BEM Fasilkom UI -->
-                     <dd class="dd-experience">BEM Fasilkom UI</dd>
-                    <ul class="ul-experience">
-                        <li class="li-experience">Art and Culture Division Intern 2025</li>
-                        <li class="li-experience">Project Officer of Gelar Karya UI 2025</li>
-                    </ul>
-                    <!-- SELESAI KONTEN OPEN HOUSE -->
-                </div>
+        {% include 'includes/life.html' %}
 
-                <!-- CODE EXPERIENCE SElESAINYA DI SINI -->
-             </section>
+        {% include 'includes/contact.html' %}
     </main>
-    <footer class="site-footer">
-        <div class="container">
-            <p>&copy; 2026 {{ name }}. Fakultas Ilmu Komputer, Universitas Indonesia.</p>
-        </div>
-    </footer>
+    <footer class="site-footer"><div class="container footer-inner"><a class="brand" href="#home">KN<span>.</span></a><p>© 2026 Khalishah Nafisah</p><span>Made with intention, still evolving.</span><a href="#home">Back to top ↑</a></div></footer>
 </body>
 </html>

@@ -1,0 +1,11 @@
+<header class="site-header">
+    <div class="container">
+        <a href="{% url 'main:show_main' %}" class="brand" aria-label="Khalishah Nafisah homepage">KN<span>.</span></a>
+        <nav aria-label="Main navigation">
+            <a href="{% url 'main:show_main' %}">Home</a>
+            <a href="{% url 'main:show_experience' %}">Work</a>
+            <a href="{% url 'main:show_projects' %}">Projects</a>
+            <a class="nav-contact" href="{% if request.resolver_match.url_name == 'show_main' %}#contact{% else %}{% url 'main:show_main' %}#contact{% endif %}">Contact me</a>
+        </nav>
+    </div>
+</header>

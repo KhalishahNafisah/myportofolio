@@ -3,31 +3,21 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{ name }} Nafisah - Portfolio</title>
+    <title>{{ name }} Nafisah - Work</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
-    <header class="site-header">
-        <div class="container">
-            <a href="{% url 'main:show_main' %}" class="brand">{{ name }}</a>
-            <nav>
-                <a href="{% url 'main:show_main' %}">Home</a>
-                <a href="{% url 'main:show_experience' %}">Work</a>
-                <a href="{% url 'main:show_projects' %}">Projects</a>
-                <a href="{% url 'main:show_main' %}#thoughts">Journal</a>
-                <a href="mailto:Khalishahnafisa1@gmail.com">Contact</a>
-            </nav>
-        </div>
-    </header>
+    {% include 'includes/header.html' %}
 
 <main>
+    {% include 'includes/selected_work.html' %}
     <section class="experience-section" id="experience">
         <div class="container">
             <p class="section-kicker">Perjalanan saya sejauh ini</p>
-            <h1>Experience</h1>
+            <h1>More work</h1>
 
             <div class="experience-grid">
                 {% for experience in experience_list %}

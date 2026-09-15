@@ -8,6 +8,8 @@ def show_main(request):
         "logo": "KN",
         "name": "Khalishah",
         "npm": "2506605840",
+        "is_homepage": True,
+        "project_list": Project.objects.order_by("-year", "title")[:3],
         "study_program": "S1 Sistem Informasi",
         "bio": (
             "Mahasiswa Sistem Informasi Universitas Indonesia yang tertarik "
@@ -32,3 +34,14 @@ def show_projects(request):
         "project_list": Project.objects.all(),
     }
     return render(request, "projects.html", context)
+
+def show_about(request):
+    return render(request, "detail.html", {"page_title": "About me", "section_template": "includes/about.html"})
+
+
+def show_life(request):
+    return render(request, "detail.html", {"page_title": "Life lately", "section_template": "includes/life.html"})
+
+
+def show_contact(request):
+    return render(request, "detail.html", {"page_title": "Let’s connect", "section_template": "includes/contact.html"})

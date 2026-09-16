@@ -50,5 +50,11 @@ class Project(models.Model):
     year = models.PositiveIntegerField()
     project_url = models.URLField(blank=True, default="")
 
+    project_image_url = models.URLField(
+        max_length=500,
+        blank=True,
+        default="",
+    )
+
     def __str__(self):
         return self.title

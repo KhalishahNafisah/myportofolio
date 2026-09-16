@@ -820,3 +820,76 @@ a.social-icon:active {
     border-color: var(--ink);
 }
 
+/* Project management */
+.portfolio-form {
+    max-width: 720px;
+}
+
+.portfolio-field {
+    margin-bottom: 20px;
+}
+
+.portfolio-field label {
+    display: block;
+    margin-bottom: 6px;
+    font-weight: 600;
+}
+
+.portfolio-field input,
+.portfolio-field textarea,
+.portfolio-field select,
+.project-search input {
+    width: 100%;
+    padding: 12px 14px;
+    border: 1px solid var(--line);
+    border-radius: 8px;
+    background: #fffdf8;
+    color: var(--ink);
+    font: inherit;
+}
+
+.portfolio-field textarea {
+    resize: vertical;
+}
+
+.portfolio-field input:focus,
+.portfolio-field textarea:focus,
+.portfolio-field select:focus,
+.project-search input:focus {
+    outline: 2px solid var(--burgundy);
+    outline-offset: 2px;
+}
+
+.portfolio-field .errorlist,
+.portfolio-form > .errorlist {
+    margin: 6px 0 0 20px;
+    color: #a32222;
+}
+
+.portfolio-actions {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 12px;
+    margin-top: 20px;
+}
+
+button.button {
+    border: 0;
+    cursor: pointer;
+    font-family: inherit;
+}
+
+.button-secondary {
+    background: var(--ink);
+}
+
+.flash-messages {
+    padding-top: 20px;
+}
+
+.flash-message {
+    padding: 12px 16px;
+    border: 1px solid var(--line);
+    background: var(--section-tint);
+}

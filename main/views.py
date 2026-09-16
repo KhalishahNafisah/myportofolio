@@ -1,5 +1,9 @@
-from django.shortcuts import render
+from django.contrib import messages
+from django.core import serializers
+from django.http import HttpResponse
+from django.shortcuts import get_object_or_404, redirect, render
 
+from main.forms import ProjectForm
 from main.models import Experience, Project
 
 
@@ -45,3 +49,24 @@ def show_life(request):
 
 def show_contact(request):
     return render(request, "detail.html", {"page_title": "Let’s connect", "section_template": "includes/contact.html"})
+
+def create_project(request):
+    if request.method == "POST":
+        form = ProjectForm(request.POST)
+
+        if form.is_valid():
+            form.save()
+            messages.success(request, "Project berhasil ditambahkan.")
+            return redirect("main:show_projects")
+    else:
+        form = ProjectForm()
+
+    return render(
+        request,
+        "projects_form.html",
+        {
+            "logo": "KN",
+            "name": "Khalishah",
+            "form": form,
+        },
+    )

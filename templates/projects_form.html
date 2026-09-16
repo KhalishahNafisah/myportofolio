@@ -1,0 +1,47 @@
+{% extends "base.html" %}
+
+{% block meta %}
+    <title>Add Project — Khalishah Nafisah</title>
+{% endblock meta %}
+
+{% block content %}
+    <main id="main">
+        <section class="experience-section">
+            <div class="container">
+                <p class="section-kicker">A new chapter</p>
+                <h1>Add a project</h1>
+
+                <form method="post"
+                      action="{% url 'main:create_project' %}"
+                      class="portfolio-form">
+                    {% csrf_token %}
+
+                    {{ form.non_field_errors }}
+
+                    {% for field in form %}
+                        <div class="portfolio-field">
+                            {{ field.label_tag }}
+                            {{ field }}
+
+                            {% if field.help_text %}
+                                <small>{{ field.help_text }}</small>
+                            {% endif %}
+
+                            {{ field.errors }}
+                        </div>
+                    {% endfor %}
+
+                    <div class="portfolio-actions">
+                        <button class="button" type="submit">
+                            Save project
+                        </button>
+                        <a class="button button-secondary"
+                           href="{% url 'main:show_projects' %}">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </main>
+{% endblock content %}

@@ -12,6 +12,12 @@
             <p class="section-kicker">Things I have brought to life</p>
             <h1>Selected Projects</h1>
 
+            <div class="portfolio-actions">
+                <a class="button" href="{% url 'main:create_project' %}">
+                    Add project
+                </a>
+            </div>
+
             <div class="experience-grid">
                 {% for project in project_list %}
                     <article class="experience-card">

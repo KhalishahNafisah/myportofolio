@@ -1,0 +1,40 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+
+    {% block meta %}
+        <title>Khalishah Nafisah — Portfolio</title>
+    {% endblock meta %}
+</head>
+<body>
+    <a class="skip-link" href="#main">Skip to content</a>
+
+    {% include "includes/header.html" %}
+
+    {% if messages %}
+        <div class="container flash-messages" aria-live="polite">
+            {% for message in messages %}
+                <p class="flash-message">{{ message }}</p>
+            {% endfor %}
+        </div>
+    {% endif %}
+
+    {% block content %}
+    {% endblock content %}
+
+    <footer class="site-footer">
+        <div class="container footer-inner">
+            <a class="brand" href="{% url 'main:show_main' %}">
+                KN<span>.</span>
+            </a>
+            <p>© 2026 Khalishah Nafisah</p>
+            <span>Made with intention, still evolving.</span>
+            <a href="#main">Back to top ↑</a>
+        </div>
+    </footer>
+</body>
+</html>

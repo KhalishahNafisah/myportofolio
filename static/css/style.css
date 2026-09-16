@@ -119,13 +119,15 @@ a:focus-visible, summary:focus-visible {
     z-index: 20;
     background: var(--paper);
     border-bottom: 1px solid var(--line);
+    box-shadow: 0 3px 12px #6c26351a;
+
 }
 
 .site-header .container {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    min-height: 82px;
+    min-height: 70px;
     gap: 24px;
 }
 

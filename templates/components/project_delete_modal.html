@@ -1,0 +1,36 @@
+<button type="button"
+        class="button button-danger"
+        popovertarget="confirm-delete-{{ project.id }}">
+    Delete project
+</button>
+
+<div id="confirm-delete-{{ project.id }}"
+     class="delete-popover"
+     popover="auto"
+     role="dialog"
+     aria-labelledby="delete-heading-{{ project.id }}">
+    <h2 id="delete-heading-{{ project.id }}">
+        Delete this project?
+    </h2>
+
+    <p>
+        You are about to delete <strong>{{ project.title }}</strong>.
+    </p>
+
+    <div class="portfolio-actions">
+        <button type="button"
+                class="button button-secondary"
+                popovertarget="confirm-delete-{{ project.id }}"
+                popovertargetaction="hide">
+            Cancel
+        </button>
+
+        <form method="post"
+              action="{% url 'main:delete_project' project.id %}">
+            {% csrf_token %}
+            <button type="submit" class="button button-danger">
+                Yes, delete
+            </button>
+        </form>
+    </div>
+</div>

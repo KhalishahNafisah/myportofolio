@@ -69,7 +69,10 @@
                                 View Project
                             </a>
                         {% endif %}
-                    </article>
+                    <div class="portfolio-actions">
+                        {% include "components/project_delete_modal.html" with project=project %}
+                    </div>
+                </article>
                 {% empty %}
                     {% if title_query %}
                         <p class="empty-state">No matching projects found.</p>

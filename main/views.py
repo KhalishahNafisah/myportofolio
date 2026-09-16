@@ -96,3 +96,11 @@ def get_projects_json(request):
         serializers.serialize("json", queryset),
         content_type="application/json",
     )
+
+def delete_project(request, project_id):
+    if request.method == "POST":
+        project = get_object_or_404(Project, pk=project_id)
+        project.delete()
+        messages.success(request, "Project berhasil dihapus.")
+
+    return redirect("main:show_projects")

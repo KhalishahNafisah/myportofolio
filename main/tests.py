@@ -87,3 +87,107 @@ class MainTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertContains(response, "No projects have been added yet.")
+
+class ProjectFlowTest(TestCase):
+    def setUp(self):
+        self.project = Project.objects.create(
+            title="RISTALK",
+            description="Seminar project.",
+            category="event",
+            year=2026,
+        )
+
+    def test_valid_form_saves_project(self):
+        response = self.client.post(
+            reverse("main:create_project"),
+            {
+                "title": "New Portfolio",
+                "description": "My Django portfolio.",
+                "category": "web",
+                "year": 2026,
+                "project_url": "",
+                "project_image_url": "",
+            },
+        )
+
+        self.assertRedirects(response, reverse("main:show_projects"))
+        self.assertTrue(
+            Project.objects.filter(title="New Portfolio").exists()
+        )
+
+    def test_invalid_form_does_not_save(self):
+        before = Project.objects.count()
+
+        response = self.client.post(
+            reverse("main:create_project"),
+            {
+                "title": "",
+                "description": "Missing title.",
+                "category": "web",
+                "year": 2026,
+            },
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("title", response.context["form"].errors)
+        self.assertEqual(Project.objects.count(), before)
+
+    def test_json_filter_ignores_case_and_outer_spaces(self):
+        response = self.client.get(
+            reverse("main:get_projects_json"),
+            {"title": "  rist  "},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response["Content-Type"], "application/json"
+        )
+        self.assertEqual(len(response.json()), 1)
+        self.assertEqual(
+            response.json()[0]["fields"]["title"], "RISTALK"
+        )
+
+    def test_projects_page_filters_results(self):
+        response = self.client.get(
+            reverse("main:show_projects"),
+            {"title": "does-not-exist"},
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertNotContains(response, "RISTALK")
+        self.assertContains(response, "No matching projects found.")
+
+    def test_get_request_does_not_delete(self):
+        response = self.client.get(
+            reverse("main:delete_project", args=[self.project.pk])
+        )
+
+        self.assertRedirects(response, reverse("main:show_projects"))
+        self.assertTrue(
+            Project.objects.filter(pk=self.project.pk).exists()
+        )
+
+    def test_post_request_deletes_project(self):
+        project_id = self.project.pk
+
+        response = self.client.post(
+            reverse("main:delete_project", args=[project_id])
+        )
+
+        self.assertRedirects(response, reverse("main:show_projects"))
+        self.assertFalse(
+            Project.objects.filter(pk=project_id).exists()
+        )
+
+    def test_delete_requires_csrf_token(self):
+        from django.test import Client
+
+        client = Client(enforce_csrf_checks=True)
+        response = client.post(
+            reverse("main:delete_project", args=[self.project.pk])
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(
+            Project.objects.filter(pk=self.project.pk).exists()
+        )

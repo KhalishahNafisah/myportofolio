@@ -18,9 +18,33 @@
                 </a>
             </div>
 
+            <form method="get"
+                action="{% url 'main:show_projects' %}"
+                class="project-search">
+                <label class="project-search-field">
+                    <span>Search projects</span>
+                    <input type="search"
+                        name="title"
+                        value="{{ title_query }}"
+                        placeholder="Search by project title">
+                </label>
+
+                <button type="submit" class="button">Search</button>
+
+                <a class="text-link" href="{% url 'main:show_projects' %}">
+                    Reset
+                </a>
+            </form>
+
             <div class="experience-grid">
                 {% for project in project_list %}
                     <article class="experience-card">
+                        {% if project.project_image_url %}
+                            <img class="portfolio-project-image"
+                                src="{{ project.project_image_url }}"
+                                alt="{{ project.title }}"
+                                loading="lazy">
+                        {% endif %}
                         <span class="experience-category">
                             {{ project.get_category_display }}
                         </span>
@@ -47,9 +71,11 @@
                         {% endif %}
                     </article>
                 {% empty %}
-                    <p class="empty-state">
-                        No projects have been added yet.
-                    </p>
+                    {% if title_query %}
+                        <p class="empty-state">No matching projects found.</p>
+                    {% else %}
+                        <p class="empty-state">No projects have been added yet.</p>
+                    {% endif %}
                 {% endfor %}
             </div>
         </div>

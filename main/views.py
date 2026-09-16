@@ -32,12 +32,26 @@ def show_experience(request):
     return render(request, "experience.html", context)
 
 def show_projects(request):
-    context = {
-        "logo": "KN",
-        "name": "Khalishah",
-        "project_list": Project.objects.all(),
-    }
-    return render(request, "projects.html", context)
+    response = get_projects_json(request)
+
+    project_list = [
+        item.object
+        for item in serializers.deserialize(
+            "json",
+            response.content.decode("utf-8"),
+        )
+    ]
+
+    return render(
+        request,
+        "projects.html",
+        {
+            "logo": "KN",
+            "name": "Khalishah",
+            "project_list": project_list,
+            "title_query": request.GET.get("title", "").strip(),
+        },
+    )
 
 def show_about(request):
     return render(request, "detail.html", {"page_title": "About me", "section_template": "includes/about.html"})
@@ -69,4 +83,16 @@ def create_project(request):
             "name": "Khalishah",
             "form": form,
         },
+    )
+
+def get_projects_json(request):
+    query = request.GET.get("title", "").strip()
+    queryset = Project.objects.order_by("-year", "title")
+
+    if query:
+        queryset = queryset.filter(title__icontains=query)
+
+    return HttpResponse(
+        serializers.serialize("json", queryset),
+        content_type="application/json",
     )

@@ -893,3 +893,29 @@ button.button {
     border: 1px solid var(--line);
     background: var(--section-tint);
 }
+
+.project-search {
+    display: flex;
+    align-items: flex-end;
+    flex-wrap: wrap;
+    gap: 12px;
+    margin-block: 28px;
+}
+
+.project-search-field {
+    flex: 1 1 240px;
+}
+
+.project-search-field span {
+    display: block;
+    margin-bottom: 6px;
+    font-size: 12px;
+}
+
+.portfolio-project-image {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    margin-bottom: 18px;
+    border-radius: 6px;
+}

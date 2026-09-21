@@ -25,8 +25,26 @@ Dosen : Pak Daya
 Dalam pengerjaan Tugas 2, saya menggunakan ChatGPT sebagai alat bantu untuk memahami ketentuan tugas, menyusun urutan implementasi pola Model-View-Template, dan mengevaluasi rancangan unit test. Saya memberikan konteks berupa ketentuan tugas dan meminta bantuan AI untuk memberitahu apa saja yang perlu saya selesaikan. Saran AI digunakan sebagai referensi, kemudian saya menyesuaikan model Project, isi proyek, struktur template, navigasi, serta penjelasan reflektif dengan kebutuhan portofolio saya sendiri. Saya juga memverifikasi hasil implementasi dan pengujian halaman secara langsung melalui development server.
 
 
+
+
+
+
 ### Tugas 3
 
-1.
-2.
-3.
+1. ModelForm digunakan karena dapat membuat form berdasarkan struktur field pada model Django. Dengan demikian, kita tidak perlu mendefinisikan ulang seluruh field dan validasinya secara manual. ModelForm juga menyediakan metode `save()` untuk menyimpan data yang valid. Pada proyek saya, `ExperienceForm` menggunakan model `Experience` untuk membuat form tambah dan edit pengalaman. Untuk mengedit data, saya memberikan `instance=experience` agar yang diperbarui adalah objek yang sudah ada, bukan membuat objek baru.
+
+`{% csrf_token %}` perlu ditambahkan pada form POST untuk membantu mencegah Cross-Site Request Forgery (CSRF), yaitu serangan yang membuat browser pengguna mengirim permintaan yang tidak dikehendaki ke aplikasi. Django memeriksa token yang dikirim bersama form untuk memvalidasi permintaan tersebut. Pada proyek saya, token ini digunakan pada form create, update, dan delete Experience. CSRF token tidak menggantikan autentikasi atau pemeriksaan hak akses.
+
+2. JSON lebih sering digunakan dalam aplikasi web modern karena formatnya ringkas dan mudah diproses. JSON merepresentasikan data melalui pasangan key-value dan array, sehingga cocok dengan struktur data yang umum digunakan dalam aplikasi. Dibandingkan XML yang menggunakan tag pembuka dan penutup, JSON biasanya membutuhkan lebih sedikit karakter untuk menyampaikan data serupa.
+
+JSON juga mudah digunakan dengan JavaScript melalui `JSON.parse()` dan `JSON.stringify()`, serta didukung oleh banyak bahasa pemrograman lainnya. Meskipun demikian, XML tetap berguna untuk kebutuhan tertentu, misalnya sistem yang menggunakan skema dan struktur dokumen XML.
+
+3. Ketika pengguna mengakses `/api/experiences/`, Django mencocokkan URL tersebut dengan route pada `main/urls.py`, kemudian menjalankan fungsi `get_experiences_json`. Fungsi ini mengambil data Experience dari database melalui ORM dan menghasilkan QuerySet. Selanjutnya, `serializers.serialize("json", experiences)` mengubah data tersebut menjadi teks JSON. Hasilnya dikembalikan melalui `HttpResponse` dengan content type `application/json`.
+
+Serialization diperlukan karena QuerySet dan instance model merupakan objek Python, bukan data JSON yang dapat langsung dipertukarkan dengan client. Serialization mengubahnya menjadi representasi yang dapat dikirim melalui HTTP dan diproses oleh penerima. Serializer Django menyertakan nama model, primary key, dan nilai field setiap objek.
+
+Untuk menampilkan Experience pada halaman web, fungsi `show_experience` memanggil `get_experiences_json` secara langsung, membaca isi respons, kemudian melakukan deserialisasi menggunakan `serializers.deserialize`. Objek Experience diambil melalui `item.object` dan dimasukkan ke context sebagai `experience_list`. Template `experience.html` kemudian melakukan perulangan terhadap daftar tersebut untuk menampilkan data.
+
+
+### AI DISCLOSURE TUGAS 3
+Saya menggunakan ChatGPT untuk memahami konsep, memperoleh panduan dan contoh kode, membantu debugging. Implementasi dan pengujian saya lakukan sendiri.

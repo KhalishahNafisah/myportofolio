@@ -3,7 +3,7 @@ from django.core import serializers
 from django.http import HttpResponse
 from django.shortcuts import get_object_or_404, redirect, render
 
-from main.forms import ProjectForm
+from main.forms import ProjectForm, ExperienceForm
 from main.models import Experience, Project
 
 
@@ -122,4 +122,64 @@ def get_experiences_json(request):
     return HttpResponse(
         serializers.serialize("json", experiences),
         content_type="application/json",
+    )
+
+def create_experience(request):
+    if request.method == "POST":
+        form = ExperienceForm(request.POST)
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                "Experience berhasil ditambahkan.",
+            )
+            return redirect("main:show_experience")
+    else:
+        form = ExperienceForm()
+
+    return render(
+        request,
+        "experience_form.html",
+        {
+            "logo": "KN",
+            "name": "Khalishah",
+            "form": form,
+            "page_title": "Add experience",
+            "submit_label": "Save experience",
+        },
+    )
+
+def update_experience(request, experience_id):
+    experience = get_object_or_404(
+        Experience,
+        pk=experience_id,
+    )
+
+    if request.method == "POST":
+        form = ExperienceForm(
+            request.POST,
+            instance=experience,
+        )
+
+        if form.is_valid():
+            form.save()
+            messages.success(
+                request,
+                "Experience berhasil diperbarui.",
+            )
+            return redirect("main:show_experience")
+    else:
+        form = ExperienceForm(instance=experience)
+
+    return render(
+        request,
+        "experience_form.html",
+        {
+            "logo": "KN",
+            "name": "Khalishah",
+            "form": form,
+            "page_title": "Edit experience",
+            "submit_label": "Save changes",
+        },
     )

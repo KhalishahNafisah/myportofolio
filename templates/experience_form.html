@@ -1,0 +1,46 @@
+{% extends "base.html" %}
+
+{% block meta %}
+    <title>{{ page_title }} — Khalishah Nafisah</title>
+{% endblock meta %}
+
+{% block content %}
+    <main id="main">
+        <section class="experience-section">
+            <div class="container">
+                <p class="section-kicker">My journey</p>
+                <h1>{{ page_title }}</h1>
+
+                <form method="post" class="portfolio-form">
+                    {% csrf_token %}
+
+                    {{ form.non_field_errors }}
+
+                    {% for field in form %}
+                        <div class="portfolio-field">
+                            {{ field.label_tag }}
+                            {{ field }}
+
+                            {% if field.help_text %}
+                                <small>{{ field.help_text }}</small>
+                            {% endif %}
+
+                            {{ field.errors }}
+                        </div>
+                    {% endfor %}
+
+                    <div class="portfolio-actions">
+                        <button type="submit" class="button">
+                            {{ submit_label }}
+                        </button>
+
+                        <a class="button button-secondary"
+                           href="{% url 'main:show_experience' %}">
+                            Cancel
+                        </a>
+                    </div>
+                </form>
+            </div>
+        </section>
+    </main>
+{% endblock content %}

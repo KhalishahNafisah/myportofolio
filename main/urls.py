@@ -11,6 +11,8 @@ from main.views import (
     show_main,
     show_projects,
     get_experiences_json,
+    create_experience,
+    update_experience,
 )
 
 app_name = "main"
@@ -33,5 +35,15 @@ urlpatterns = [
         "api/experiences/",
         get_experiences_json,
         name="get_experiences_json",
+    ),
+    path(
+        "experience/add/",
+        create_experience,
+        name="create_experience",
+    ),
+    path(
+        "experience/<uuid:experience_id>/edit/",
+        update_experience,
+        name="update_experience",
     ),
 ]

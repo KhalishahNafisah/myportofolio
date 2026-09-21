@@ -10,6 +10,7 @@ from main.views import (
     show_life,
     show_main,
     show_projects,
+    get_experiences_json,
 )
 
 app_name = "main"
@@ -27,5 +28,10 @@ urlpatterns = [
         "projects/<uuid:project_id>/delete/",
         delete_project,
         name="delete_project",
+    ),
+    path(
+        "api/experiences/",
+        get_experiences_json,
+        name="get_experiences_json",
     ),
 ]

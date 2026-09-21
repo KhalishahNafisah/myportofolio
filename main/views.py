@@ -24,11 +24,22 @@ def show_main(request):
 
 
 def show_experience(request):
+    response = get_experiences_json(request)
+
+    experience_list = [
+        item.object
+        for item in serializers.deserialize(
+            "json",
+            response.content.decode("utf-8"),
+        )
+    ]
+
     context = {
         "logo": "KN",
         "name": "Khalishah",
-        "experience_list": Experience.objects.all(),
+        "experience_list": experience_list,
     }
+
     return render(request, "experience.html", context)
 
 def show_projects(request):
@@ -104,3 +115,11 @@ def delete_project(request, project_id):
         messages.success(request, "Project berhasil dihapus.")
 
     return redirect("main:show_projects")
+
+def get_experiences_json(request):
+    experiences = Experience.objects.order_by("-started_at", "title")
+
+    return HttpResponse(
+        serializers.serialize("json", experiences),
+        content_type="application/json",
+    )

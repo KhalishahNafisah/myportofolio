@@ -191,3 +191,168 @@ class ProjectFlowTest(TestCase):
         self.assertTrue(
             Project.objects.filter(pk=self.project.pk).exists()
         )
+
+class ExperienceFlowTest(TestCase):
+    def setUp(self):
+        self.experience = Experience.objects.create(
+            title="Original experience",
+            description="Initial description.",
+            category="volunteer",
+        )
+
+    def valid_payload(self):
+        return {
+            "title": "Updated experience",
+            "description": "Updated description.",
+            "category": "part-time",
+            "thumbnail": "",
+            "ended_at": "",
+        }
+
+    def test_create_experience(self):
+        before = Experience.objects.count()
+
+        response = self.client.post(
+            reverse("main:create_experience"),
+            self.valid_payload(),
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("main:show_experience"),
+        )
+        self.assertEqual(Experience.objects.count(), before + 1)
+        self.assertTrue(
+            Experience.objects.filter(
+                title="Updated experience",
+            ).exists()
+        )
+
+    def test_invalid_create_does_not_save(self):
+        before = Experience.objects.count()
+        payload = self.valid_payload()
+        payload["title"] = ""
+
+        response = self.client.post(
+            reverse("main:create_experience"),
+            payload,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("title", response.context["form"].errors)
+        self.assertEqual(Experience.objects.count(), before)
+
+    def test_update_changes_existing_record(self):
+        before = Experience.objects.count()
+
+        response = self.client.post(
+            reverse(
+                "main:update_experience",
+                args=[self.experience.pk],
+            ),
+            self.valid_payload(),
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("main:show_experience"),
+        )
+        self.experience.refresh_from_db()
+        self.assertEqual(
+            self.experience.title,
+            "Updated experience",
+        )
+        self.assertEqual(Experience.objects.count(), before)
+
+    def test_invalid_update_preserves_saved_data(self):
+        payload = self.valid_payload()
+        payload["title"] = ""
+
+        response = self.client.post(
+            reverse(
+                "main:update_experience",
+                args=[self.experience.pk],
+            ),
+            payload,
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.experience.refresh_from_db()
+        self.assertEqual(
+            self.experience.title,
+            "Original experience",
+        )
+
+    def test_json_contains_experience(self):
+        response = self.client.get(
+            reverse("main:get_experiences_json")
+        )
+
+        self.assertEqual(response.status_code, 200)
+        self.assertEqual(
+            response["Content-Type"],
+            "application/json",
+        )
+
+        data = response.json()
+
+        self.assertEqual(len(data), 1)
+        self.assertEqual(data[0]["pk"], str(self.experience.pk))
+        self.assertEqual(
+            data[0]["fields"]["title"],
+            self.experience.title,
+        )
+
+    def test_get_does_not_delete_experience(self):
+        response = self.client.get(
+            reverse(
+                "main:delete_experience",
+                args=[self.experience.pk],
+            )
+        )
+
+        self.assertEqual(response.status_code, 405)
+        self.assertTrue(
+            Experience.objects.filter(
+                pk=self.experience.pk,
+            ).exists()
+        )
+
+    def test_post_deletes_experience(self):
+        experience_id = self.experience.pk
+
+        response = self.client.post(
+            reverse(
+                "main:delete_experience",
+                args=[experience_id],
+            )
+        )
+
+        self.assertRedirects(
+            response,
+            reverse("main:show_experience"),
+        )
+        self.assertFalse(
+            Experience.objects.filter(
+                pk=experience_id,
+            ).exists()
+        )
+
+    def test_delete_requires_csrf_token(self):
+        from django.test import Client
+
+        client = Client(enforce_csrf_checks=True)
+
+        response = client.post(
+            reverse(
+                "main:delete_experience",
+                args=[self.experience.pk],
+            )
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertTrue(
+            Experience.objects.filter(
+                pk=self.experience.pk,
+            ).exists()
+        )

@@ -23,3 +23,10 @@ Dosen : Pak Daya
 
 ### AI Disclosure
 Dalam pengerjaan Tugas 2, saya menggunakan ChatGPT sebagai alat bantu untuk memahami ketentuan tugas, menyusun urutan implementasi pola Model-View-Template, dan mengevaluasi rancangan unit test. Saya memberikan konteks berupa ketentuan tugas dan meminta bantuan AI untuk memberitahu apa saja yang perlu saya selesaikan. Saran AI digunakan sebagai referensi, kemudian saya menyesuaikan model Project, isi proyek, struktur template, navigasi, serta penjelasan reflektif dengan kebutuhan portofolio saya sendiri. Saya juga memverifikasi hasil implementasi dan pengujian halaman secara langsung melalui development server.
+
+
+### Tugas 3
+
+1.
+2.
+3.

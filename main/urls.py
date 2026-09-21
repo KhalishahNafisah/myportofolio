@@ -13,6 +13,7 @@ from main.views import (
     get_experiences_json,
     create_experience,
     update_experience,
+    delete_experience,
 )
 
 app_name = "main"

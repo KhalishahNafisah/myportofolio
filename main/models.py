@@ -1,4 +1,7 @@
+import uuid
 from django.db import models
+from django.contrib.auth.models import User  # Tambahkan baris ini
+
 
 # Create your models here.
 import uuid
@@ -58,3 +61,10 @@ class Project(models.Model):
 
     def __str__(self):
         return self.title
+
+    project_image_url = models.URLField(blank=True, max_length=500)
+    # Tambahkan field berikut: satu proyek bisa di-star banyak pengguna,
+    # dan satu pengguna bisa mem-star banyak proyek
+    starred_by = models.ManyToManyField(
+        User, related_name="starred_projects", blank=True
+    )

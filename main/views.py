@@ -5,9 +5,15 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from main.forms import ProjectForm, ExperienceForm
 from main.models import Experience, Project
+from django.contrib.auth import login, logout
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
+from django.contrib.auth.decorators import login_required  # Tambahkan baris ini
+from django.core.exceptions import PermissionDenied        # Tambahkan baris ini
+import datetime
 
 
 def show_main(request):
+    last_login = request.COOKIES.get('last_login', 'Belum ada sesi login / Cookie tidak ditemukan')
     context = {
         "logo": "KN",
         "name": "Khalishah",
@@ -19,6 +25,7 @@ def show_main(request):
             "Mahasiswa Sistem Informasi Universitas Indonesia yang tertarik "
             "pada Project and Product Management."
         ),
+        "last_login": last_login,
     }
     return render(request, "index.html", context)
 
@@ -75,7 +82,10 @@ def show_life(request):
 def show_contact(request):
     return render(request, "detail.html", {"page_title": "Let’s connect", "section_template": "includes/contact.html"})
 
+@login_required(login_url="/login/")
 def create_project(request):
+    if not request.user.is_superuser:
+        raise PermissionDenied
     if request.method == "POST":
         form = ProjectForm(request.POST)
 
@@ -108,6 +118,7 @@ def get_projects_json(request):
         content_type="application/json",
     )
 
+@login_required(login_url="/login/")
 def delete_project(request, project_id):
     if request.method == "POST":
         project = get_object_or_404(Project, pk=project_id)
@@ -197,3 +208,58 @@ def delete_experience(request, experience_id):
         "Experience berhasil dihapus.",
     )
     return redirect("main:show_experience")
+
+
+# FUNGSI REGISTER
+def register(request):
+    form = UserCreationForm(request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Akun berhasil dibuat. Silakan login.")
+        return redirect("main:login")
+
+    context = {
+        "name": "Khalishah",
+        "form": form,
+    }
+    return render(request, "register.html", context)
+
+
+# VIEW LOGIN DAN FORM SIGN IN
+def login_user(request):
+    form = AuthenticationForm(request, data=request.POST or None)
+
+    if request.method == "POST" and form.is_valid():
+        user = form.get_user()
+        login(request, user)
+        response = redirect("main:show_main")
+        response.set_cookie('last_login', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        return response
+
+    context = {
+        "name": "Khalishah",
+        "form": form,
+    }
+    return render(request, "login.html", context)
+
+def logout_user(request):
+    logout(request)
+    response = redirect("main:show_main")
+    response.delete_cookie('last_login')
+    return response
+
+# Tanpa cek is_superuser: semua akun yang sudah login boleh memberi star
+@login_required(login_url="/login/")
+def toggle_star(request, project_id):
+    project = get_object_or_404(Project, pk=project_id)
+
+    if request.method == "POST":
+        # Kalau akun ini sudah pernah memberi star, batalkan star-nya.
+        # Kalau belum, tambahkan star.
+        if request.user in project.starred_by.all():
+            project.starred_by.remove(request.user)
+        else:
+            project.starred_by.add(request.user)
+
+    return redirect("main:show_projects")

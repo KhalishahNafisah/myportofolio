@@ -114,12 +114,19 @@ def get_projects_json(request):
         queryset = queryset.filter(title__icontains=query)
 
     return HttpResponse(
-        serializers.serialize("json", queryset),
+        serializers.serialize(
+            "json",
+            queryset,
+            use_natural_foreign_keys=True,
+        ),
         content_type="application/json",
     )
 
 @login_required(login_url="/login/")
 def delete_project(request, project_id):
+    if not request.user.is_superuser:
+        raise PermissionDenied
+
     if request.method == "POST":
         project = get_object_or_404(Project, pk=project_id)
         project.delete()

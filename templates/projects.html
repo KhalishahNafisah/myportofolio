@@ -72,10 +72,11 @@
                             </a>
                         {% endif %}
                     <div class="portfolio-actions">
-                    {% if user.is_superuser %}  {# Tambahkan baris ini #}
-                    {% include "components/project_star.html" with project=project %}
-                        {% include "components/project_delete_modal.html" with project=project %}
-                    {% endif %}                 {# Tambahkan baris ini #}
+                        {% include "components/project_star.html" with project=project %}
+
+                        {% if user.is_superuser %}
+                            {% include "components/project_delete_modal.html" with project=project %}
+                        {% endif %}
                     </div>
                 </article>
                 {% empty %}

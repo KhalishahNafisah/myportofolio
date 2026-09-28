@@ -1,3 +1,43 @@
+# Portofolio Khalishah Nafisah
+
+Website portofolio untuk mata kuliah Pemrograman Berbasis Platform, menggunakan Django, HTML, dan CSS. Bagian dinamisnya mencakup Projects dan Experience, form pengelolaan data, API JSON publik, autentikasi, dan star per pengguna.
+
+## Menjalankan proyek dari awal
+
+Gunakan Python 3.12 untuk mengikuti environment pengujian Django 5.2. Environment lama `env/` pada komputer pengembangan masih menggunakan Python 3.9/Django 4.2; buat environment baru untuk mengikuti `requirements.txt`.
+
+```bash
+git clone https://github.com/KhalishahNafisah/myportofolio.git
+cd myportofolio
+python3.12 -m venv .venv
+source .venv/bin/activate
+python -m pip install -r requirements.txt
+python manage.py migrate
+python manage.py createsuperuser
+python manage.py check
+python manage.py test
+python manage.py runserver
+```
+
+Pada Windows, aktivasi environment menggunakan `.venv\Scripts\activate`. Jika repository sudah tersedia, mulai dari direktori yang berisi `manage.py`; tidak perlu clone ulang. Konfigurasi lokal menggunakan SQLite dengan `PRODUCTION=False` (nilai default). Jangan menyalin `.env.prod` atau kredensial produksi ke repository.
+
+Buka `http://127.0.0.1:8000/`. Jika port tersebut sedang dipakai, jalankan `python manage.py runserver 8005` dan buka port yang sama di browser. Clone baru memiliki database kosong; masuk dengan akun superuser dan tambahkan Projects/Experience lewat form website atau Django Admin.
+
+| Halaman | URL |
+|---|---|
+| Beranda dan informasi sesi | `/` |
+| Daftar Experience | `/experience/` |
+| Detail Experience | `/experience/<uuid>/` |
+| Daftar dan pencarian Projects | `/projects/` |
+| JSON Experience | `/api/experiences/` |
+| JSON Projects | `/api/projects/` |
+| Registrasi dan login | `/register/`, `/login/` |
+| Pengaturan pengguna dan grup | `/admin/` |
+
+Database, password, dan akun lokal tidak ikut di-push. Pada instalasi atau deployment baru, jalankan migrasi dan atur akun/peran pada database lingkungan tersebut. Push GitHub menyimpan kode; penerapan ke hosting adalah langkah terpisah.
+
+## Identitas dan progres mingguan
+
 Nama : Khalishah Nafisah
 
 NPM : 2506605840
@@ -48,3 +88,85 @@ Untuk menampilkan Experience pada halaman web, fungsi `show_experience` memanggi
 
 ### AI DISCLOSURE TUGAS 3
 Saya menggunakan ChatGPT untuk memahami konsep, memperoleh panduan dan contoh kode, membantu debugging. Implementasi dan pengujian saya lakukan sendiri.
+
+
+### Tugas 4
+
+1. **Autentikasi dan otorisasi.** Autentikasi memeriksa identitas pengguna melalui login, sedangkan otorisasi menentukan tindakan yang diizinkan setelah identitas diketahui. `portfolio_permission_required` mengarahkan pengunjung ke login dan menghasilkan HTTP 403 untuk akun yang tidak memiliki izin. Pemeriksaan dijalankan sebelum membaca/mengubah objek yang dilindungi. Menyembunyikan tombol hanya membantu tampilan; pembatasan utama tetap berada di server.
+
+2. **Peran Editor.** Editor adalah anggota Django Group dengan nama persis `Editor`. Pemilik membuat grup dan menetapkan anggotanya melalui Django Admin. Editor boleh mengedit Experience dan Projects, tetapi tidak boleh menambah atau menghapusnya. Registrasi hanya membuat akun biasa dan tidak menerima pengaturan `groups`, `is_staff`, atau `is_superuser`.
+
+3. **Star dan keamanan data.** `Experience.starred_by` merupakan `ManyToManyField` ke `settings.AUTH_USER_MODEL`. Tabel penghubung menjaga satu pasangan pengguna–Experience, sehingga satu pengguna tidak bisa mempunyai dua star pada Experience yang sama. View star hanya menerima POST dengan CSRF dan menggunakan `request.user`; pengguna tidak bisa memilih akun lain sebagai pemberi star. JSON hanya memuat daftar field portofolio yang diizinkan. Jumlah star dan status pengguna dihitung dengan `Count` dan `Exists`, tanpa menampilkan identitas akun lain.
+
+4. **Session dan cookie.** Login menggunakan autentikasi Django serta cookie `last_login` untuk informasi waktu masuk. Cookie tersebut bukan bukti otorisasi; izin ditentukan dari pengguna yang diautentikasi melalui session. Tujuan `next` divalidasi agar login tidak mengarahkan pengguna ke situs luar. Logout memakai POST dengan CSRF, mengakhiri session, dan menghapus cookie `last_login`.
+
+Catatan: saat instruksi Tugas 4 diperiksa pada 28 September 2026, bagian pertanyaan reflektif masih berupa placeholder. Poin bernomor di atas merupakan penjelasan implementasi, bukan jawaban atas pertanyaan dosen yang belum dipublikasikan.
+
+#### Matriks hak akses
+
+Aturan ini berlaku untuk Experience dan Projects. Detail Experience serta daftar kedua bagian tetap dapat dibaca tanpa login.
+
+| Tindakan | Pengunjung | Pengguna biasa | Editor | Superuser |
+|---|---|---|---|---|
+| Membaca data dan JSON | Boleh | Boleh | Boleh | Boleh |
+| Star/unstar | Diarahkan ke login | Boleh | Boleh | Boleh |
+| Menambah | Diarahkan ke login | 403 | 403 | Boleh |
+| Mengedit | Diarahkan ke login | 403 | Boleh | Boleh |
+| Menghapus | Diarahkan ke login | 403 | 403 | Boleh |
+
+Star, hapus, dan logout tidak menerima GET untuk mengubah data. Pengguna yang memiliki izin akan mendapat 405 jika memakai GET pada endpoint POST tersebut. Permintaan POST tanpa token CSRF yang valid ditolak oleh middleware Django dengan 403, termasuk sebelum pemeriksaan login pada view.
+
+#### Mengatur Editor melalui Django Admin, langkah demi langkah
+
+1. Jalankan migrasi dan buat superuser melalui perintah setup di atas. Jika sudah memiliki superuser, gunakan akun tersebut.
+2. Buka `/register/` untuk membuat akun pengguna biasa yang nantinya akan menjadi Editor.
+3. Login ke `/admin/` sebagai superuser.
+4. Pada **Authentication and Authorization → Groups**, pilih **Add**.
+5. Isi **Name** dengan `Editor`, termasuk huruf E kapital. Simpan. Tidak perlu memilih permissions tambahan karena view memeriksa nama grup secara langsung.
+6. Buka **Users**, pilih akun yang akan menjadi Editor.
+7. Pada bagian **Groups**, pindahkan `Editor` dari **Available groups** ke **Chosen groups**, kemudian **Save**.
+8. Biarkan **Staff status** dan **Superuser status** tidak dicentang untuk Editor. Editor bekerja melalui form portofolio, bukan halaman administrasi.
+9. Logout dari akun pemilik, lalu login melalui `/login/` sebagai Editor. Tombol Edit tampil pada Experience dan Projects; tombol Add dan Delete tidak tampil.
+10. Untuk mencabut hak edit, kembali ke Admin sebagai pemilik, hapus keanggotaan grup Editor dari akun tersebut, lalu simpan.
+
+Grup dan keanggotaannya adalah data database, sehingga perlu disiapkan pada setiap lingkungan yang ingin digunakan. Tidak ada akun atau grup istimewa yang otomatis dibuat oleh registrasi maupun migrasi.
+
+#### Urutan implementasi
+
+1. Menambahkan `main/permissions.py` untuk pemeriksaan superuser dan grup Editor; menerapkannya pada view create/update/delete Experience serta kondisi tombol pada template.
+2. Menambahkan relasi `starred_by` pada Experience dan migrasi `0006_experience_starred_by`, kemudian menjalankan `migrate`.
+3. Menambahkan endpoint `experience/<uuid>/star/` dengan login, POST, dan CSRF; membuat komponen tombol star serta halaman detail publik.
+4. Membatasi serializer Experience dan Projects pada field publik. Format JSON Tugas 3 (`model`, `pk`, `fields`) dan pencarian Projects tetap dipertahankan. Halaman daftar tetap membaca hasil JSON dan melakukan deserialisasi; status star ditambahkan secara terpisah untuk tampilan.
+5. Menyamakan pemeriksaan izin Projects, menyediakan edit untuk Editor/pemilik, memvalidasi `next` saat login, dan mengganti logout menjadi form POST.
+6. Memperbarui tes lama yang belum login saat melakukan aksi pemilik dan menambahkan tes peran, perubahan data, CSRF, star, kebocoran JSON, serta input tidak valid.
+7. Memeriksa halaman melalui browser dengan database pengujian terpisah, lalu mendokumentasikan hasilnya.
+
+#### Cara memverifikasi hasil
+
+```bash
+python manage.py check
+python manage.py makemigrations --check --dry-run
+python manage.py test
+python manage.py runserver
+```
+
+Penjelasan kode langkah demi langkah tersedia pada [panduan belajar Tugas 4](docs/panduan-belajar-tugas-4.md). Hasil pengujian dan skenario browser tercatat pada [catatan pengujian Tugas 4](docs/pengujian-tugas-4.md). Daftar file penting: `main/models.py`, `main/permissions.py`, `main/views.py`, `main/urls.py`, `main/tests.py`, serta template Experience dan Projects.
+
+Untuk pengujian manual, gunakan satu akun pemilik, satu anggota Editor, dan satu akun biasa. Periksa tampilan tombol, coba buka URL edit langsung, beri/batalkan star, lalu buka JSON tanpa login. Semua akun biasa tetap boleh memberi star meskipun tidak memiliki izin mengedit portofolio.
+
+#### Pengumpulan
+
+Setelah seluruh commit tersimpan dan pengujian selesai, push ke GitHub. Tautan yang dikumpulkan di SCELE berbentuk `https://github.com/KhalishahNafisah/myportofolio/commit/<hash-commit-final>`, bukan hanya alamat repository. Repository harus dapat dibaca publik. Pengumpulan SCELE perlu dilakukan melalui akun mahasiswa.
+
+### AI Disclosure Tugas 4
+
+Saya menggunakan ChatGPT (melalui Codex) untuk membantu pengerjaan Tugas 4.
+Bantuan AI mencakup memberi pemahaman dan membantu implementasi perubahan kode untuk pembatasan
+hak akses Experience, peran Editor, fitur star/unstar, keamanan
+endpoint JSON, pengujian otomatis, dan dokumentasi.
+
+Alur prompting dilakukan bertahap: pemeriksaan kebutuhan tugas
+dan kondisi proyek, penyusunan langkah pengerjaan untuk ditinjau,
+kemudian implementasi, pengujian, dan evaluasi hasil.
+Ringkasan prompting dan evaluasi keterbatasan AI dicatat pada
+[log bantuan AI Tugas 4](docs/ai-log-tugas-4.md).

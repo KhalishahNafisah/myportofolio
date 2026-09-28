@@ -1,4 +1,5 @@
 from django.test import TestCase
+from django.contrib.auth.models import Group, User
 from django.urls import reverse
 from django.utils import timezone
 
@@ -90,6 +91,8 @@ class MainTest(TestCase):
 
 class ProjectFlowTest(TestCase):
     def setUp(self):
+        owner = User.objects.create_user(username="owner", is_superuser=True)
+        self.client.force_login(owner)
         self.project = Project.objects.create(
             title="RISTALK",
             description="Seminar project.",
@@ -194,6 +197,8 @@ class ProjectFlowTest(TestCase):
 
 class ExperienceFlowTest(TestCase):
     def setUp(self):
+        owner = User.objects.create_user(username="owner", is_superuser=True)
+        self.client.force_login(owner)
         self.experience = Experience.objects.create(
             title="Original experience",
             description="Initial description.",
@@ -356,3 +361,88 @@ class ExperienceFlowTest(TestCase):
                 pk=self.experience.pk,
             ).exists()
         )
+
+
+class ExperienceAccessTest(TestCase):
+    def setUp(self):
+        self.regular = User.objects.create_user(username="reader")
+        self.editor = User.objects.create_user(username="editor")
+        self.editor.groups.add(Group.objects.create(name="Editor"))
+        self.owner = User.objects.create_user(username="owner", is_superuser=True)
+        self.experience = Experience.objects.create(
+            title="Protected experience", description="Original", category="volunteer"
+        )
+        self.payload = {
+            "title": "Changed", "description": "Updated", "category": "research",
+            "thumbnail": "", "ended_at": "",
+        }
+        self.urls = {
+            "create": reverse("main:create_experience"),
+            "update": reverse("main:update_experience", args=[self.experience.pk]),
+            "delete": reverse("main:delete_experience", args=[self.experience.pk]),
+        }
+
+    def test_guests_are_redirected_before_accessing_mutations(self):
+        for action, url in self.urls.items():
+            for method in ("get", "post"):
+                with self.subTest(action=action, method=method):
+                    response = getattr(self.client, method)(url, self.payload if method == "post" else {})
+                    self.assertEqual(response.status_code, 302)
+                    self.assertEqual(response.url, f'{reverse("main:login")}?next={url}')
+        self.experience.refresh_from_db()
+        self.assertEqual(self.experience.title, "Protected experience")
+        self.assertEqual(Experience.objects.count(), 1)
+
+    def test_regular_users_cannot_mutate_even_with_direct_requests(self):
+        self.client.force_login(self.regular)
+        for action, url in self.urls.items():
+            for method in ("get", "post"):
+                with self.subTest(action=action, method=method):
+                    response = getattr(self.client, method)(url, self.payload if method == "post" else {})
+                    self.assertEqual(response.status_code, 403)
+        self.experience.refresh_from_db()
+        self.assertEqual(self.experience.title, "Protected experience")
+        self.assertEqual(Experience.objects.count(), 1)
+
+    def test_editor_can_only_update(self):
+        self.client.force_login(self.editor)
+        for action in ("create", "delete"):
+            for method in ("get", "post"):
+                with self.subTest(action=action, method=method):
+                    response = getattr(self.client, method)(self.urls[action], self.payload if method == "post" else {})
+                    self.assertEqual(response.status_code, 403)
+        self.assertEqual(self.client.get(self.urls["update"]).status_code, 200)
+        response = self.client.post(self.urls["update"], self.payload)
+        self.assertRedirects(response, reverse("main:show_experience"))
+        self.experience.refresh_from_db()
+        self.assertEqual(self.experience.title, "Changed")
+        self.assertEqual(Experience.objects.count(), 1)
+
+    def test_controls_match_each_role_and_list_stays_public(self):
+        for user, create, update, delete in (
+            (None, False, False, False),
+            (self.regular, False, False, False),
+            (self.editor, False, True, False),
+            (self.owner, True, True, True),
+        ):
+            with self.subTest(user=user):
+                self.client.logout()
+                if user:
+                    self.client.force_login(user)
+                response = self.client.get(reverse("main:show_experience"))
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, self.experience.title)
+                for action, visible in (("create", create), ("update", update), ("delete", delete)):
+                    assertion = self.assertContains if visible else self.assertNotContains
+                    assertion(response, self.urls[action])
+
+    def test_staff_flag_alone_does_not_grant_portfolio_access(self):
+        self.regular.is_staff = True
+        self.regular.save()
+        self.client.force_login(self.regular)
+        self.assertEqual(self.client.post(self.urls["update"], self.payload).status_code, 403)
+
+    def test_revoking_editor_group_removes_edit_access(self):
+        self.client.force_login(self.editor)
+        self.editor.groups.clear()
+        self.assertEqual(self.client.post(self.urls["update"], self.payload).status_code, 403)

@@ -5,6 +5,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.http import require_POST
 from main.forms import ProjectForm, ExperienceForm
 from main.models import Experience, Project
+from main.permissions import is_editor, portfolio_permission_required
 from django.contrib.auth import login, logout
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.decorators import login_required  # Tambahkan baris ini
@@ -45,6 +46,7 @@ def show_experience(request):
         "logo": "KN",
         "name": "Khalishah",
         "experience_list": experience_list,
+        "is_editor": is_editor(request.user),
     }
 
     return render(request, "experience.html", context)
@@ -142,6 +144,7 @@ def get_experiences_json(request):
         content_type="application/json",
     )
 
+@portfolio_permission_required()
 def create_experience(request):
     if request.method == "POST":
         form = ExperienceForm(request.POST)
@@ -168,6 +171,7 @@ def create_experience(request):
         },
     )
 
+@portfolio_permission_required(allow_editor=True)
 def update_experience(request, experience_id):
     experience = get_object_or_404(
         Experience,
@@ -202,6 +206,7 @@ def update_experience(request, experience_id):
         },
     )
 
+@portfolio_permission_required()
 @require_POST
 def delete_experience(request, experience_id):
     experience = get_object_or_404(

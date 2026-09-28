@@ -13,10 +13,12 @@
             <p class="section-kicker">Perjalanan saya sejauh ini</p>
             <h1>More work</h1>
             <div class="portfolio-actions">
+                {% if user.is_superuser %}
                 <a class="button"
                 href="{% url 'main:create_experience' %}">
                     Add experience
                 </a>
+                {% endif %}
 
                 <a class="button button-secondary"
                 href="{% url 'main:get_experiences_json' %}">
@@ -47,11 +49,14 @@
                             <p class="experience-status">Selesai</p>
                         {% endif %}
                         <div class="portfolio-actions">
+                            {% if user.is_superuser or is_editor %}
                             <a class="button button-secondary"
                             href="{% url 'main:update_experience' experience.id %}">
                                 Edit
                             </a>
+                            {% endif %}
 
+                            {% if user.is_superuser %}
                             <form method="post"
                                 action="{% url 'main:delete_experience' experience.id %}"
                                 onsubmit="return confirm('Hapus experience ini?');">
@@ -61,6 +66,7 @@
                                     Delete
                                 </button>
                             </form>
+                            {% endif %}
                         </div>
                     </article>
                 {% empty %}

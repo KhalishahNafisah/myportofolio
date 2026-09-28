@@ -656,3 +656,121 @@ class AuthAndProjectSecurityTest(TestCase):
         page = self.client.get(reverse("main:show_projects"))
         self.assertNotContains(page, self.editor.username)
         self.assertContains(page, '<span class="star-count">1</span>', html=True)
+
+
+class AssignmentFourRegressionTest(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(username="owner", is_superuser=True, is_staff=True)
+        self.reader = User.objects.create_user(username="reader")
+        self.editor = User.objects.create_user(username="editor")
+        self.experience = Experience.objects.create(title="Regression experience", description="Original")
+        self.project = Project.objects.create(title="Regression project", description="Original", year=2026)
+
+    def test_owner_can_assign_editor_through_django_admin(self):
+        self.client.force_login(self.owner)
+        response = self.client.post(reverse("admin:auth_group_add"), {"name": "Editor", "_save": "Save"})
+        self.assertEqual(response.status_code, 302)
+        group = Group.objects.get(name="Editor")
+        response = self.client.post(reverse("admin:auth_user_change", args=[self.editor.pk]), {
+            "username": self.editor.username,
+            "is_active": "on",
+            "groups": [group.pk],
+            "date_joined_0": self.editor.date_joined.strftime("%Y-%m-%d"),
+            "date_joined_1": self.editor.date_joined.strftime("%H:%M:%S"),
+            "_save": "Save",
+        })
+        self.assertEqual(response.status_code, 302)
+        self.editor.refresh_from_db()
+        self.assertTrue(self.editor.groups.filter(name="Editor").exists())
+        self.assertFalse(self.editor.is_staff)
+        self.assertFalse(self.editor.is_superuser)
+        self.client.force_login(self.editor)
+        self.assertEqual(self.client.get(reverse("main:update_experience", args=[self.experience.pk])).status_code, 200)
+        self.assertEqual(self.client.get(reverse("admin:auth_group_add")).status_code, 302)
+
+    def test_all_state_changing_forms_reject_missing_csrf_for_owner(self):
+        from django.test import Client
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.owner)
+        urls = [
+            reverse("main:create_experience"),
+            reverse("main:update_experience", args=[self.experience.pk]),
+            reverse("main:delete_experience", args=[self.experience.pk]),
+            reverse("main:toggle_experience_star", args=[self.experience.pk]),
+            reverse("main:create_project"),
+            reverse("main:update_project", args=[self.project.pk]),
+            reverse("main:delete_project", args=[self.project.pk]),
+            reverse("main:toggle_star", args=[self.project.pk]),
+            reverse("main:logout"),
+        ]
+        for url in urls:
+            with self.subTest(url=url):
+                self.assertEqual(client.post(url).status_code, 403)
+        self.assertEqual(Experience.objects.count(), 1)
+        self.assertEqual(Project.objects.count(), 1)
+        self.assertEqual(self.experience.starred_by.count(), 0)
+        self.assertEqual(self.project.starred_by.count(), 0)
+        self.assertIn("_auth_user_id", client.session)
+
+    def test_each_authenticated_role_can_star_experience(self):
+        self.editor.groups.add(Group.objects.create(name="Editor"))
+        url = reverse("main:toggle_experience_star", args=[self.experience.pk])
+        for user in (self.reader, self.editor, self.owner):
+            with self.subTest(user=user):
+                self.client.force_login(user)
+                self.assertEqual(self.client.post(url).status_code, 302)
+                self.assertTrue(self.experience.starred_by.filter(pk=user.pk).exists())
+        self.assertEqual(self.experience.starred_by.count(), 3)
+        self.client.post(url)
+        self.assertEqual(self.experience.starred_by.count(), 2)
+        self.assertTrue(self.experience.starred_by.filter(pk=self.reader.pk).exists())
+
+    def test_detail_is_public_and_controls_follow_roles(self):
+        self.editor.groups.add(Group.objects.create(name="Editor"))
+        url = reverse("main:experience_detail", args=[self.experience.pk])
+        edit = reverse("main:update_experience", args=[self.experience.pk])
+        delete = reverse("main:delete_experience", args=[self.experience.pk])
+        for user in (None, self.reader, self.editor, self.owner):
+            with self.subTest(user=user):
+                self.client.logout()
+                if user:
+                    self.client.force_login(user)
+                page = self.client.get(url)
+                self.assertEqual(page.status_code, 200)
+                self.assertContains(page, self.experience.title)
+                (self.assertContains if user in (self.editor, self.owner) else self.assertNotContains)(page, edit)
+                (self.assertContains if user == self.owner else self.assertNotContains)(page, delete)
+
+    def test_invalid_project_edit_preserves_data_and_star_membership(self):
+        self.project.starred_by.add(self.reader)
+        self.client.force_login(self.owner)
+        response = self.client.post(reverse("main:update_project", args=[self.project.pk]), {
+            "title": "", "description": "Invalid edit", "year": "wrong", "category": "web",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertIn("title", response.context["form"].errors)
+        self.project.refresh_from_db()
+        self.assertEqual(self.project.title, "Regression project")
+        self.assertTrue(self.project.starred_by.filter(pk=self.reader.pk).exists())
+
+    def test_forms_cannot_overwrite_star_membership(self):
+        self.experience.starred_by.add(self.reader)
+        self.client.force_login(self.owner)
+        self.client.post(reverse("main:update_experience", args=[self.experience.pk]), {
+            "title": "Updated", "description": "Valid", "category": "volunteer",
+            "thumbnail": "", "ended_at": "", "starred_by": [self.owner.pk],
+        })
+        self.experience.refresh_from_db()
+        self.assertEqual(self.experience.title, "Updated")
+        self.assertEqual(list(self.experience.starred_by.all()), [self.reader])
+
+    def test_experience_content_is_escaped_on_list_and_detail(self):
+        self.experience.title = '<script>alert("unsafe")</script>'
+        self.experience.description = '<img src=x onerror=alert("unsafe")>'
+        self.experience.save()
+        for url in (reverse("main:show_experience"), reverse("main:experience_detail", args=[self.experience.pk])):
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertNotContains(response, self.experience.title)
+                self.assertNotContains(response, self.experience.description)
+                self.assertContains(response, "&lt;script&gt;")

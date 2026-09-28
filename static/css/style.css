@@ -973,3 +973,22 @@ button.button {
     background: rgba(255, 255, 255, 0.25);
     font-size: 0.8rem;
 }
+
+.logout-form {
+    display: inline-flex;
+    margin: 0;
+}
+
+.logout-button {
+    border: 0;
+    padding: 0;
+    background: transparent;
+    color: inherit;
+    font: inherit;
+    cursor: pointer;
+}
+
+.logout-button:hover,
+.logout-button:focus-visible {
+    text-decoration: underline;
+}

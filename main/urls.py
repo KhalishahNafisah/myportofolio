@@ -3,6 +3,7 @@ from django.urls import path
 from main.views import (
     create_project,
     delete_project,
+    update_project,
     get_projects_json,
     show_about,
     show_contact,
@@ -34,6 +35,7 @@ urlpatterns = [
     path("experience/<uuid:experience_id>/star/", toggle_experience_star, name="toggle_experience_star"),
     path("projects/", show_projects, name="show_projects"),
     path("projects/add/", create_project, name="create_project"),
+    path("projects/<uuid:project_id>/edit/", update_project, name="update_project"),
     path("api/projects/", get_projects_json, name="get_projects_json"),
     path(
         "projects/<uuid:project_id>/delete/",
@@ -63,7 +65,6 @@ urlpatterns = [
     path("register/", register, name="register"),
     path("login/", login_user, name="login"),
     path("logout/", logout_user, name="logout"),
-    # Tambahkan path ini ke dalam urlpatterns
     path(
         "projects/<uuid:project_id>/star/",
         toggle_star,

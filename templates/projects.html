@@ -13,11 +13,11 @@
             <h1>Selected Projects</h1>
 
             <div class="portfolio-actions">
-            {% if user.is_superuser %}  {# Tambahkan baris ini #}
+            {% if user.is_superuser %}
                 <a class="button" href="{% url 'main:create_project' %}">
                     Add project
                 </a>
-            {% endif %}                 {# Tambahkan baris ini #}
+            {% endif %}
             </div>
 
             <form method="get"
@@ -74,6 +74,9 @@
                     <div class="portfolio-actions">
                         {% include "components/project_star.html" with project=project %}
 
+                        {% if user.is_superuser or is_editor %}
+                            <a class="button button-secondary" href="{% url 'main:update_project' project.id %}">Edit</a>
+                        {% endif %}
                         {% if user.is_superuser %}
                             {% include "components/project_delete_modal.html" with project=project %}
                         {% endif %}

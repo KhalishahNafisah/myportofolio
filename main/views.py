@@ -1,18 +1,19 @@
 from django.contrib import messages
+from django.contrib.auth import login, logout
+from django.contrib.auth.decorators import login_required
+from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core import serializers
+from django.db.models import BooleanField, Count, Exists, OuterRef, Value
 from django.http import HttpResponse
-from django.db.models import Count, Exists, OuterRef, Value, BooleanField
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
+from django.utils import timezone
+from django.utils.http import url_has_allowed_host_and_scheme
 from django.views.decorators.http import require_POST
-from main.forms import ProjectForm, ExperienceForm
+
+from main.forms import ExperienceForm, ProjectForm
 from main.models import Experience, Project
 from main.permissions import is_editor, portfolio_permission_required
-from django.contrib.auth import login, logout
-from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
-from django.contrib.auth.decorators import login_required  # Tambahkan baris ini
-from django.core.exceptions import PermissionDenied        # Tambahkan baris ini
-import datetime
 
 
 def with_star_status(queryset, user):
@@ -23,6 +24,24 @@ def with_star_status(queryset, user):
             queryset.model.objects.filter(pk=OuterRef("pk"), starred_by=user)
         )
     return queryset.annotate(star_count=Count("starred_by"), is_starred=status)
+
+
+def deserialize_with_star_status(response, model, user):
+    """Preserve the JSON flow from Assignment 3 without exposing account data."""
+    items = [
+        item.object
+        for item in serializers.deserialize("json", response.content.decode("utf-8"))
+    ]
+    queryset = model.objects.filter(pk__in=[item.pk for item in items])
+    states = {
+        pk: (count, starred)
+        for pk, count, starred in with_star_status(queryset, user).values_list(
+            "pk", "star_count", "is_starred"
+        )
+    }
+    for item in items:
+        item.star_count, item.is_starred = states.get(item.pk, (0, False))
+    return items
 
 
 def show_main(request):
@@ -46,23 +65,7 @@ def show_main(request):
 def show_experience(request):
     response = get_experiences_json(request)
 
-    experience_list = [
-        item.object
-        for item in serializers.deserialize(
-            "json",
-            response.content.decode("utf-8"),
-        )
-    ]
-
-    # Keep Assignment 3's JSON/deserialization flow, then attach private UI state.
-    star_states = {
-        item.pk: item
-        for item in with_star_status(Experience.objects.all(), request.user)
-    }
-    for experience in experience_list:
-        state = star_states[experience.pk]
-        experience.star_count = state.star_count
-        experience.is_starred = state.is_starred
+    experience_list = deserialize_with_star_status(response, Experience, request.user)
 
     context = {
         "logo": "KN",
@@ -102,13 +105,7 @@ def toggle_experience_star(request, experience_id):
 def show_projects(request):
     response = get_projects_json(request)
 
-    project_list = [
-        item.object
-        for item in serializers.deserialize(
-            "json",
-            response.content.decode("utf-8"),
-        )
-    ]
+    project_list = deserialize_with_star_status(response, Project, request.user)
 
     return render(
         request,
@@ -117,6 +114,7 @@ def show_projects(request):
             "logo": "KN",
             "name": "Khalishah",
             "project_list": project_list,
+            "is_editor": is_editor(request.user),
             "title_query": request.GET.get("title", "").strip(),
         },
     )
@@ -132,10 +130,8 @@ def show_life(request):
 def show_contact(request):
     return render(request, "detail.html", {"page_title": "Let’s connect", "section_template": "includes/contact.html"})
 
-@login_required(login_url="/login/")
+@portfolio_permission_required()
 def create_project(request):
-    if not request.user.is_superuser:
-        raise PermissionDenied
     if request.method == "POST":
         form = ProjectForm(request.POST)
 
@@ -153,6 +149,7 @@ def create_project(request):
             "logo": "KN",
             "name": "Khalishah",
             "form": form,
+            "page_title": "Add a project",
         },
     )
 
@@ -167,22 +164,32 @@ def get_projects_json(request):
         serializers.serialize(
             "json",
             queryset,
-            use_natural_foreign_keys=True,
+            fields=("title", "description", "category", "year", "project_url", "project_image_url"),
         ),
         content_type="application/json",
     )
 
-@login_required(login_url="/login/")
+@portfolio_permission_required(allow_editor=True)
+def update_project(request, project_id):
+    project = get_object_or_404(Project, pk=project_id)
+    form = ProjectForm(request.POST if request.method == "POST" else None, instance=project)
+    if request.method == "POST" and form.is_valid():
+        form.save()
+        messages.success(request, "Project berhasil diperbarui.")
+        return redirect("main:show_projects")
+    return render(request, "projects_form.html", {
+        "logo": "KN", "name": "Khalishah", "form": form, "page_title": "Edit project",
+    })
+
+
+@portfolio_permission_required()
+@require_POST
 def delete_project(request, project_id):
-    if not request.user.is_superuser:
-        raise PermissionDenied
-
-    if request.method == "POST":
-        project = get_object_or_404(Project, pk=project_id)
-        project.delete()
-        messages.success(request, "Project berhasil dihapus.")
-
+    project = get_object_or_404(Project, pk=project_id)
+    project.delete()
+    messages.success(request, "Project berhasil dihapus.")
     return redirect("main:show_projects")
+
 
 def get_experiences_json(request):
     experiences = Experience.objects.order_by("-started_at", "title")
@@ -272,7 +279,6 @@ def delete_experience(request, experience_id):
     return redirect("main:show_experience")
 
 
-# FUNGSI REGISTER
 def register(request):
     form = UserCreationForm(request.POST or None)
 
@@ -288,40 +294,47 @@ def register(request):
     return render(request, "register.html", context)
 
 
-# VIEW LOGIN DAN FORM SIGN IN
 def login_user(request):
-    form = AuthenticationForm(request, data=request.POST or None)
+    form = AuthenticationForm(request, data=request.POST if request.method == "POST" else None)
+    next_url = request.POST.get("next", request.GET.get("next", ""))
+    if not url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        next_url = reverse("main:show_main")
 
     if request.method == "POST" and form.is_valid():
         user = form.get_user()
         login(request, user)
-        response = redirect("main:show_main")
-        response.set_cookie('last_login', datetime.datetime.now().strftime('%Y-%m-%d %H:%M:%S'))
+        response = redirect(next_url)
+        response.set_cookie(
+            "last_login", timezone.localtime().strftime("%Y-%m-%d %H:%M:%S %Z"),
+            httponly=True, samesite="Lax", secure=request.is_secure(),
+        )
         return response
 
     context = {
         "name": "Khalishah",
         "form": form,
     }
+    context["next"] = next_url
     return render(request, "login.html", context)
 
+@require_POST
 def logout_user(request):
     logout(request)
     response = redirect("main:show_main")
     response.delete_cookie('last_login')
     return response
 
-# Tanpa cek is_superuser: semua akun yang sudah login boleh memberi star
-@login_required(login_url="/login/")
+# All authenticated roles may star a project; only POST can change state.
+@login_required(login_url="main:login")
+@require_POST
 def toggle_star(request, project_id):
     project = get_object_or_404(Project, pk=project_id)
-
-    if request.method == "POST":
-        # Kalau akun ini sudah pernah memberi star, batalkan star-nya.
-        # Kalau belum, tambahkan star.
-        if request.user in project.starred_by.all():
-            project.starred_by.remove(request.user)
-        else:
-            project.starred_by.add(request.user)
-
+    if project.starred_by.filter(pk=request.user.pk).exists():
+        project.starred_by.remove(request.user)
+        messages.success(request, "Star pada project dibatalkan.")
+    else:
+        project.starred_by.add(request.user)
+        messages.success(request, "Project diberi star.")
     return redirect("main:show_projects")

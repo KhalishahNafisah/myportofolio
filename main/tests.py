@@ -165,7 +165,7 @@ class ProjectFlowTest(TestCase):
             reverse("main:delete_project", args=[self.project.pk])
         )
 
-        self.assertRedirects(response, reverse("main:show_projects"))
+        self.assertEqual(response.status_code, 405)
         self.assertTrue(
             Project.objects.filter(pk=self.project.pk).exists()
         )
@@ -533,3 +533,126 @@ class ExperienceStarTest(TestCase):
         })
         self.assertNotContains(response, self.user.username)
         self.assertNotContains(response, "starred_by")
+
+
+class AuthAndProjectSecurityTest(TestCase):
+    def setUp(self):
+        self.password = "Temporary-test-pass-837!"
+        self.reader = User.objects.create_user(username="reader", password=self.password)
+        self.editor = User.objects.create_user(username="editor")
+        self.editor.groups.add(Group.objects.create(name="Editor"))
+        self.owner = User.objects.create_user(username="owner", is_superuser=True, is_staff=True)
+        self.project = Project.objects.create(title="Secure project", description="Public", year=2026)
+        self.payload = {
+            "title": "Edited project", "description": "Updated", "category": "web", "year": 2026,
+            "project_url": "", "project_image_url": "",
+        }
+
+    def test_login_preserves_safe_next_and_rejects_external_destinations(self):
+        for target, expected in (
+            ("/experience/", "/experience/"),
+            ("/projects/?title=Secure", "/projects/?title=Secure"),
+            ("https://example.org/", "/"),
+            ("//example.org/", "/"),
+            ("javascript:alert(1)", "/"),
+        ):
+            with self.subTest(target=target):
+                self.client.logout()
+                response = self.client.post(reverse("main:login"), {
+                    "username": self.reader.username, "password": self.password, "next": target,
+                })
+                self.assertRedirects(response, expected)
+                self.assertIn("last_login", response.cookies)
+                self.assertTrue(response.cookies["last_login"]["httponly"])
+                self.assertEqual(response.cookies["last_login"]["samesite"], "Lax")
+
+    def test_login_form_keeps_next_through_invalid_password(self):
+        response = self.client.get(reverse("main:login"), {"next": "/experience/"})
+        self.assertContains(response, '<input type="hidden" name="next" value="/experience/">', html=True)
+        response = self.client.post(reverse("main:login"), {
+            "username": self.reader.username, "password": "incorrect", "next": "/experience/",
+        })
+        self.assertEqual(response.status_code, 200)
+        self.assertTrue(response.context["form"].errors)
+        self.assertEqual(response.context["next"], "/experience/")
+        self.assertNotIn("_auth_user_id", self.client.session)
+
+    def test_logout_only_accepts_post_and_clears_session_and_cookie(self):
+        self.client.force_login(self.reader)
+        self.client.cookies["last_login"] = "previous visit"
+        self.assertEqual(self.client.get(reverse("main:logout")).status_code, 405)
+        self.assertIn("_auth_user_id", self.client.session)
+        response = self.client.post(reverse("main:logout"))
+        self.assertRedirects(response, reverse("main:show_main"))
+        self.assertNotIn("_auth_user_id", self.client.session)
+        self.assertEqual(response.cookies["last_login"]["max-age"], 0)
+
+    def test_registration_cannot_assign_privileged_roles(self):
+        response = self.client.post(reverse("main:register"), {
+            "username": "new-reader", "password1": self.password, "password2": self.password,
+            "is_superuser": "1", "is_staff": "1", "groups": self.editor.groups.first().pk,
+        })
+        self.assertRedirects(response, reverse("main:login"))
+        user = User.objects.get(username="new-reader")
+        self.assertFalse(user.is_superuser)
+        self.assertFalse(user.is_staff)
+        self.assertFalse(user.groups.exists())
+
+    def test_project_update_permissions_and_controls(self):
+        url = reverse("main:update_project", args=[self.project.pk])
+        for user, status in ((None, 302), (self.reader, 403), (self.editor, 302), (self.owner, 302)):
+            with self.subTest(user=user):
+                self.client.logout()
+                self.project.title = "Secure project"
+                self.project.save()
+                if user:
+                    self.client.force_login(user)
+                response = self.client.post(url, self.payload)
+                self.assertEqual(response.status_code, status)
+                self.project.refresh_from_db()
+                allowed = user in (self.editor, self.owner)
+                self.assertEqual(self.project.title, "Edited project" if allowed else "Secure project")
+                page = self.client.get(reverse("main:show_projects"))
+                (self.assertContains if allowed else self.assertNotContains)(page, url)
+                create = reverse("main:create_project")
+                delete = reverse("main:delete_project", args=[self.project.pk])
+                for action in (create, delete):
+                    (self.assertContains if user == self.owner else self.assertNotContains)(page, action)
+
+    def test_reader_and_editor_cannot_create_or_delete_projects(self):
+        for user in (self.reader, self.editor):
+            self.client.force_login(user)
+            for url in (reverse("main:create_project"), reverse("main:delete_project", args=[self.project.pk])):
+                for method in ("get", "post"):
+                    with self.subTest(user=user, url=url, method=method):
+                        self.assertEqual(getattr(self.client, method)(url, self.payload if method == "post" else {}).status_code, 403)
+        self.assertEqual(Project.objects.count(), 1)
+
+    def test_project_json_does_not_expose_star_accounts(self):
+        self.project.starred_by.add(self.reader)
+        response = self.client.get(reverse("main:get_projects_json"))
+        self.assertEqual(set(response.json()[0]["fields"]), {
+            "title", "description", "category", "year", "project_url", "project_image_url",
+        })
+        self.assertNotContains(response, self.reader.username)
+        self.assertNotContains(response, "starred_by")
+
+    def test_each_authenticated_role_can_toggle_project_stars(self):
+        url = reverse("main:toggle_star", args=[self.project.pk])
+        for user in (self.reader, self.editor, self.owner):
+            with self.subTest(user=user):
+                self.client.force_login(user)
+                self.assertEqual(self.client.get(url).status_code, 405)
+                self.assertRedirects(self.client.post(url), reverse("main:show_projects"))
+                self.assertTrue(self.project.starred_by.filter(pk=user.pk).exists())
+                page = self.client.get(reverse("main:show_projects"))
+                self.assertContains(page, 'aria-pressed="true"')
+                self.assertRedirects(self.client.post(url), reverse("main:show_projects"))
+                self.assertFalse(self.project.starred_by.filter(pk=user.pk).exists())
+
+    def test_project_page_does_not_display_other_account_names(self):
+        self.project.starred_by.add(self.editor)
+        self.client.force_login(self.reader)
+        page = self.client.get(reverse("main:show_projects"))
+        self.assertNotContains(page, self.editor.username)
+        self.assertContains(page, '<span class="star-count">1</span>', html=True)

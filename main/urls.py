@@ -18,6 +18,8 @@ from main.views import (
     login_user,
     logout_user,
     toggle_star,
+    toggle_experience_star,
+    experience_detail,
 )
 
 app_name = "main"
@@ -28,6 +30,8 @@ urlpatterns = [
     path("life/", show_life, name="show_life"),
     path("contact/", show_contact, name="show_contact"),
     path("experience/", show_experience, name="show_experience"),
+    path("experience/<uuid:experience_id>/", experience_detail, name="experience_detail"),
+    path("experience/<uuid:experience_id>/star/", toggle_experience_star, name="toggle_experience_star"),
     path("projects/", show_projects, name="show_projects"),
     path("projects/add/", create_project, name="create_project"),
     path("api/projects/", get_projects_json, name="get_projects_json"),

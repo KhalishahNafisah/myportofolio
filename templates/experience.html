@@ -38,7 +38,7 @@
                         <span class="experience-category">
                             {{ experience.get_category_display }}
                         </span>
-                        <h2>{{ experience.title }}</h2>
+                        <h2><a href="{% url 'main:experience_detail' experience.id %}">{{ experience.title }}</a></h2>
                         <p class="experience-description">
                             {{ experience.description }}
                         </p>
@@ -49,6 +49,7 @@
                             <p class="experience-status">Selesai</p>
                         {% endif %}
                         <div class="portfolio-actions">
+                            {% include "components/experience_star.html" %}
                             {% if user.is_superuser or is_editor %}
                             <a class="button button-secondary"
                             href="{% url 'main:update_experience' experience.id %}">

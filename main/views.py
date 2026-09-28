@@ -1,7 +1,9 @@
 from django.contrib import messages
 from django.core import serializers
 from django.http import HttpResponse
+from django.db.models import Count, Exists, OuterRef, Value, BooleanField
 from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_POST
 from main.forms import ProjectForm, ExperienceForm
 from main.models import Experience, Project
@@ -11,6 +13,16 @@ from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.contrib.auth.decorators import login_required  # Tambahkan baris ini
 from django.core.exceptions import PermissionDenied        # Tambahkan baris ini
 import datetime
+
+
+def with_star_status(queryset, user):
+    """Fetch counts and the current user's status without loading other accounts."""
+    status = Value(False, output_field=BooleanField())
+    if user.is_authenticated:
+        status = Exists(
+            queryset.model.objects.filter(pk=OuterRef("pk"), starred_by=user)
+        )
+    return queryset.annotate(star_count=Count("starred_by"), is_starred=status)
 
 
 def show_main(request):
@@ -42,6 +54,16 @@ def show_experience(request):
         )
     ]
 
+    # Keep Assignment 3's JSON/deserialization flow, then attach private UI state.
+    star_states = {
+        item.pk: item
+        for item in with_star_status(Experience.objects.all(), request.user)
+    }
+    for experience in experience_list:
+        state = star_states[experience.pk]
+        experience.star_count = state.star_count
+        experience.is_starred = state.is_starred
+
     context = {
         "logo": "KN",
         "name": "Khalishah",
@@ -50,6 +72,32 @@ def show_experience(request):
     }
 
     return render(request, "experience.html", context)
+
+
+def experience_detail(request, experience_id):
+    experience = get_object_or_404(
+        with_star_status(Experience.objects.all(), request.user), pk=experience_id
+    )
+    return render(request, "experience_detail.html", {
+        "experience": experience,
+        "is_editor": is_editor(request.user),
+    })
+
+
+@login_required(login_url="main:login")
+@require_POST
+def toggle_experience_star(request, experience_id):
+    experience = get_object_or_404(Experience, pk=experience_id)
+    if experience.starred_by.filter(pk=request.user.pk).exists():
+        experience.starred_by.remove(request.user)
+        messages.success(request, "Star pada experience dibatalkan.")
+    else:
+        experience.starred_by.add(request.user)
+        messages.success(request, "Experience diberi star.")
+    detail_url = reverse("main:experience_detail", args=[experience.pk])
+    if request.POST.get("next") == detail_url:
+        return redirect(detail_url)
+    return redirect("main:show_experience")
 
 def show_projects(request):
     response = get_projects_json(request)
@@ -140,7 +188,9 @@ def get_experiences_json(request):
     experiences = Experience.objects.order_by("-started_at", "title")
 
     return HttpResponse(
-        serializers.serialize("json", experiences),
+        serializers.serialize("json", experiences, fields=(
+            "title", "description", "category", "thumbnail", "started_at", "ended_at",
+        )),
         content_type="application/json",
     )
 

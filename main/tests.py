@@ -446,3 +446,90 @@ class ExperienceAccessTest(TestCase):
         self.client.force_login(self.editor)
         self.editor.groups.clear()
         self.assertEqual(self.client.post(self.urls["update"], self.payload).status_code, 403)
+
+
+class ExperienceStarTest(TestCase):
+    def setUp(self):
+        self.user = User.objects.create_user(username="star-reader")
+        self.other = User.objects.create_user(username="other-reader")
+        self.experience = Experience.objects.create(title="Star test", description="Public description")
+        self.url = reverse("main:toggle_experience_star", args=[self.experience.pk])
+        self.detail_url = reverse("main:experience_detail", args=[self.experience.pk])
+
+    def test_guest_is_redirected_without_adding_star(self):
+        response = self.client.post(self.url)
+        self.assertEqual(response.status_code, 302)
+        self.assertTrue(response.url.startswith(reverse("main:login")))
+        self.assertEqual(self.experience.starred_by.count(), 0)
+
+    def test_post_toggles_only_current_users_star(self):
+        self.experience.starred_by.add(self.other)
+        self.client.force_login(self.user)
+        response = self.client.post(self.url)
+        self.assertRedirects(response, reverse("main:show_experience"))
+        self.assertEqual(self.experience.starred_by.count(), 2)
+        self.assertTrue(self.experience.starred_by.filter(pk=self.user.pk).exists())
+        self.client.post(self.url)
+        self.assertEqual(list(self.experience.starred_by.all()), [self.other])
+
+    def test_many_to_many_prevents_duplicate_stars(self):
+        self.experience.starred_by.add(self.user)
+        self.experience.starred_by.add(self.user)
+        self.assertEqual(self.experience.starred_by.count(), 1)
+
+    def test_get_cannot_toggle_star(self):
+        self.client.force_login(self.user)
+        self.assertEqual(self.client.get(self.url).status_code, 405)
+        self.assertEqual(self.experience.starred_by.count(), 0)
+
+    def test_csrf_is_required_and_valid_token_works(self):
+        from django.test import Client
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.user)
+        self.assertEqual(client.post(self.url).status_code, 403)
+        self.assertEqual(self.experience.starred_by.count(), 0)
+        client.get(self.detail_url)
+        response = client.post(self.url, {"csrfmiddlewaretoken": client.cookies["csrftoken"].value})
+        self.assertEqual(response.status_code, 302)
+        self.assertEqual(self.experience.starred_by.count(), 1)
+
+    def test_list_and_detail_show_public_count_and_personal_state(self):
+        self.experience.starred_by.add(self.user, self.other)
+        for url in (reverse("main:show_experience"), self.detail_url):
+            with self.subTest(url=url):
+                response = self.client.get(url)
+                self.assertContains(response, "Login to star")
+                self.assertContains(response, '<span class="star-count">2</span>', html=True)
+                self.assertNotContains(response, self.other.username)
+                self.client.force_login(self.user)
+                response = self.client.get(url)
+                self.assertContains(response, 'aria-pressed="true"')
+                self.assertContains(response, "Unstar")
+                self.client.logout()
+
+    def test_star_returns_to_detail_when_requested(self):
+        self.client.force_login(self.user)
+        self.assertRedirects(self.client.post(self.url, {"next": self.detail_url}), self.detail_url)
+        self.assertRedirects(
+            self.client.post(self.url, {"next": "https://example.org/"}),
+            reverse("main:show_experience"),
+        )
+
+    def test_missing_experience_returns_404(self):
+        import uuid
+        missing = uuid.uuid4()
+        self.assertEqual(self.client.get(reverse("main:experience_detail", args=[missing])).status_code, 404)
+        self.client.force_login(self.user)
+        self.assertEqual(self.client.post(reverse("main:toggle_experience_star", args=[missing])).status_code, 404)
+
+    def test_public_json_preserves_schema_and_excludes_accounts(self):
+        self.experience.starred_by.add(self.user)
+        response = self.client.get(reverse("main:get_experiences_json"))
+        item = response.json()[0]
+        self.assertEqual(item["model"], "main.experience")
+        self.assertEqual(item["pk"], str(self.experience.pk))
+        self.assertEqual(set(item["fields"]), {
+            "title", "description", "category", "thumbnail", "started_at", "ended_at",
+        })
+        self.assertNotContains(response, self.user.username)
+        self.assertNotContains(response, "starred_by")

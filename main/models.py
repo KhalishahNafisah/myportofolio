@@ -1,10 +1,6 @@
 import uuid
+from django.conf import settings
 from django.db import models
-from django.contrib.auth.models import User  # Tambahkan baris ini
-
-
-# Create your models here.
-import uuid
 
 class Experience(models.Model):
     EXPERIENCE_CHOICES = [
@@ -23,6 +19,10 @@ class Experience(models.Model):
     thumbnail = models.URLField(blank=True, null=True)
     started_at = models.DateTimeField(auto_now_add=True)
     ended_at = models.DateTimeField(blank=True, null=True)
+    starred_by = models.ManyToManyField(
+        settings.AUTH_USER_MODEL, related_name="starred_experiences", blank=True
+    )
+
     def __str__(self):
         return self.title
     
@@ -65,5 +65,5 @@ class Project(models.Model):
     # Tambahkan field berikut: satu proyek bisa di-star banyak pengguna,
     # dan satu pengguna bisa mem-star banyak proyek
     starred_by = models.ManyToManyField(
-        User, related_name="starred_projects", blank=True
+        settings.AUTH_USER_MODEL, related_name="starred_projects", blank=True
     )

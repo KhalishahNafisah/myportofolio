@@ -1,0 +1,18 @@
+{% if user.is_authenticated %}
+    <form method="post" action="{% url 'main:toggle_experience_star' experience.id %}" class="star-form">
+        {% csrf_token %}
+        <input type="hidden" name="next" value="{{ request.path }}">
+        <button type="submit" class="button button-star{% if experience.is_starred %} is-starred{% endif %}"
+                aria-pressed="{{ experience.is_starred|yesno:'true,false' }}"
+                aria-label="{% if experience.is_starred %}Batalkan star{% else %}Beri star{% endif %} untuk {{ experience.title }}">
+            <span aria-hidden="true">★</span>
+            {% if experience.is_starred %}Unstar{% else %}Star{% endif %}
+            <span class="star-count">{{ experience.star_count }}</span>
+        </button>
+    </form>
+{% else %}
+    <a class="button button-star" href="{% url 'main:login' %}?next={{ request.path|urlencode }}">
+        Login to star <span aria-hidden="true">★</span>
+        <span class="star-count">{{ experience.star_count }}</span>
+    </a>
+{% endif %}

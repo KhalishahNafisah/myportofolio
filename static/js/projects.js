@@ -9,6 +9,8 @@ const csrfHtml = csrfInput.outerHTML;
 const placeholderId = "00000000-0000-0000-0000-000000000000";
 
 let projectsAbortController;
+const SEARCH_DEBOUNCE_DELAY = 300;
+let searchDebounceTimer;
 
 function escapeHtml(value) {
     return String(value ?? "")
@@ -240,12 +242,29 @@ function searchProjects() {
     fetchProjects(searchInput.value.trim());
 }
 
+searchInput.addEventListener("input", () => {
+    clearTimeout(searchDebounceTimer);
+
+    if (projectsAbortController) {
+        projectsAbortController.abort();
+    }
+
+    searchDebounceTimer = setTimeout(
+        searchProjects,
+        SEARCH_DEBOUNCE_DELAY
+    );
+});
+
 searchForm.addEventListener("submit", (event) => {
     event.preventDefault();
+
+    clearTimeout(searchDebounceTimer);
     searchProjects();
 });
 
 document.getElementById("reset-search").addEventListener("click", () => {
+    clearTimeout(searchDebounceTimer);
+
     searchInput.value = "";
     searchProjects();
 });

@@ -73,21 +73,49 @@ class MainTest(TestCase):
 
 
     def test_project_data_appears_on_projects_page(self):
-        response = self.client.get(reverse("main:show_projects"))
+        page = self.client.get(
+            reverse("main:show_projects")
+        )
 
-        self.assertContains(response, self.project.title)
-        self.assertContains(response, self.project.description)
-        self.assertContains(response, "Event Management")
-        self.assertContains(response, "2026")
+        self.assertContains(page, 'id="grid"')
+        self.assertNotContains(page, self.project.title)
+
+        response = self.client.get(
+            reverse("main:get_projects_json")
+        )
+
+        fields = response.json()[0]["fields"]
+
+        self.assertEqual(
+            fields["title"],
+            self.project.title,
+        )
+        self.assertEqual(
+            fields["description"],
+            self.project.description,
+        )
+        self.assertEqual(
+            fields["category_display"],
+            "Event Management",
+        )
+        self.assertEqual(fields["year"], 2026)
 
 
     def test_empty_projects_page_displays_empty_message(self):
         Project.objects.all().delete()
 
-        response = self.client.get(reverse("main:show_projects"))
+        page = self.client.get(
+            reverse("main:show_projects")
+        )
 
-        self.assertEqual(response.status_code, 200)
-        self.assertContains(response, "No projects have been added yet.")
+        self.assertEqual(page.status_code, 200)
+        self.assertContains(page, 'id="empty"')
+
+        response = self.client.get(
+            reverse("main:get_projects_json")
+        )
+
+        self.assertEqual(response.json(), [])
 
 class ProjectFlowTest(TestCase):
     def setUp(self):
@@ -151,14 +179,25 @@ class ProjectFlowTest(TestCase):
         )
 
     def test_projects_page_filters_results(self):
-        response = self.client.get(
+        query = {"title": "does-not-exist"}
+
+        page = self.client.get(
             reverse("main:show_projects"),
-            {"title": "does-not-exist"},
+            query,
+        )
+
+        self.assertEqual(
+            page.context["title_query"],
+            "does-not-exist",
+        )
+
+        response = self.client.get(
+            reverse("main:get_projects_json"),
+            query,
         )
 
         self.assertEqual(response.status_code, 200)
-        self.assertNotContains(response, "RISTALK")
-        self.assertContains(response, "No matching projects found.")
+        self.assertEqual(response.json(), [])
 
     def test_get_request_does_not_delete(self):
         response = self.client.get(
@@ -599,25 +638,76 @@ class AuthAndProjectSecurityTest(TestCase):
         self.assertFalse(user.groups.exists())
 
     def test_project_update_permissions_and_controls(self):
-        url = reverse("main:update_project", args=[self.project.pk])
-        for user, status in ((None, 302), (self.reader, 403), (self.editor, 302), (self.owner, 302)):
+        url = reverse(
+            "main:update_project",
+            args=[self.project.pk],
+        )
+
+        cases = (
+            (None, 302),
+            (self.reader, 403),
+            (self.editor, 302),
+            (self.owner, 302),
+        )
+
+        for user, status in cases:
             with self.subTest(user=user):
                 self.client.logout()
+
                 self.project.title = "Secure project"
                 self.project.save()
+
                 if user:
                     self.client.force_login(user)
-                response = self.client.post(url, self.payload)
-                self.assertEqual(response.status_code, status)
+
+                response = self.client.post(
+                    url,
+                    self.payload,
+                )
+
+                self.assertEqual(
+                    response.status_code,
+                    status,
+                )
+
                 self.project.refresh_from_db()
-                allowed = user in (self.editor, self.owner)
-                self.assertEqual(self.project.title, "Edited project" if allowed else "Secure project")
-                page = self.client.get(reverse("main:show_projects"))
-                (self.assertContains if allowed else self.assertNotContains)(page, url)
-                create = reverse("main:create_project")
-                delete = reverse("main:delete_project", args=[self.project.pk])
-                for action in (create, delete):
-                    (self.assertContains if user == self.owner else self.assertNotContains)(page, action)
+
+                allowed = user in (
+                    self.editor,
+                    self.owner,
+                )
+
+                expected_title = (
+                    "Edited project"
+                    if allowed
+                    else "Secure project"
+                )
+
+                self.assertEqual(
+                    self.project.title,
+                    expected_title,
+                )
+
+                page = self.client.get(
+                    reverse("main:show_projects")
+                )
+
+                edit_assertion = (
+                    self.assertContains
+                    if allowed
+                    else self.assertNotContains
+                )
+
+                edit_assertion(page, "data-edit-url=")
+
+                owner_assertion = (
+                    self.assertContains
+                    if user == self.owner
+                    else self.assertNotContains
+                )
+
+                owner_assertion(page, "data-delete-url=")
+                owner_assertion(page, 'id="project-form"')
 
     def test_reader_and_editor_cannot_create_or_delete_projects(self):
         for user in (self.reader, self.editor):
@@ -630,32 +720,120 @@ class AuthAndProjectSecurityTest(TestCase):
 
     def test_project_json_does_not_expose_star_accounts(self):
         self.project.starred_by.add(self.reader)
-        response = self.client.get(reverse("main:get_projects_json"))
-        self.assertEqual(set(response.json()[0]["fields"]), {
-            "title", "description", "category", "year", "project_url", "project_image_url",
-        })
-        self.assertNotContains(response, self.reader.username)
+
+        response = self.client.get(
+            reverse("main:get_projects_json")
+        )
+
+        fields = response.json()[0]["fields"]
+
+        self.assertEqual(
+            set(fields),
+            {
+                "title",
+                "description",
+                "category",
+                "category_display",
+                "year",
+                "project_url",
+                "project_image_url",
+                "star_count",
+                "is_starred",
+            },
+        )
+
+        self.assertEqual(fields["star_count"], 1)
+        self.assertFalse(fields["is_starred"])
+
+        self.assertNotContains(
+            response,
+            self.reader.username,
+        )
         self.assertNotContains(response, "starred_by")
 
     def test_each_authenticated_role_can_toggle_project_stars(self):
-        url = reverse("main:toggle_star", args=[self.project.pk])
-        for user in (self.reader, self.editor, self.owner):
+        url = reverse(
+            "main:toggle_star",
+            args=[self.project.pk],
+        )
+
+        for user in (
+            self.reader,
+            self.editor,
+            self.owner,
+        ):
             with self.subTest(user=user):
                 self.client.force_login(user)
-                self.assertEqual(self.client.get(url).status_code, 405)
-                self.assertRedirects(self.client.post(url), reverse("main:show_projects"))
-                self.assertTrue(self.project.starred_by.filter(pk=user.pk).exists())
-                page = self.client.get(reverse("main:show_projects"))
-                self.assertContains(page, 'aria-pressed="true"')
-                self.assertRedirects(self.client.post(url), reverse("main:show_projects"))
-                self.assertFalse(self.project.starred_by.filter(pk=user.pk).exists())
+
+                self.assertEqual(
+                    self.client.get(url).status_code,
+                    405,
+                )
+
+                self.assertRedirects(
+                    self.client.post(url),
+                    reverse("main:show_projects"),
+                )
+
+                self.assertTrue(
+                    self.project.starred_by.filter(
+                        pk=user.pk
+                    ).exists()
+                )
+
+                response = self.client.get(
+                    reverse("main:get_projects_json")
+                )
+                data = response.json()[0]["fields"]
+
+                self.assertTrue(data["is_starred"])
+                self.assertEqual(data["star_count"], 1)
+
+                self.assertRedirects(
+                    self.client.post(url),
+                    reverse("main:show_projects"),
+                )
+
+                self.assertFalse(
+                    self.project.starred_by.filter(
+                        pk=user.pk
+                    ).exists()
+                )
+
+                response = self.client.get(
+                    reverse("main:get_projects_json")
+                )
+                data = response.json()[0]["fields"]
+
+                self.assertFalse(data["is_starred"])
+                self.assertEqual(data["star_count"], 0)
 
     def test_project_page_does_not_display_other_account_names(self):
         self.project.starred_by.add(self.editor)
         self.client.force_login(self.reader)
-        page = self.client.get(reverse("main:show_projects"))
-        self.assertNotContains(page, self.editor.username)
-        self.assertContains(page, '<span class="star-count">1</span>', html=True)
+
+        page = self.client.get(
+            reverse("main:show_projects")
+        )
+
+        self.assertNotContains(
+            page,
+            self.editor.username,
+        )
+
+        response = self.client.get(
+            reverse("main:get_projects_json")
+        )
+
+        self.assertNotContains(
+            response,
+            self.editor.username,
+        )
+
+        fields = response.json()[0]["fields"]
+
+        self.assertEqual(fields["star_count"], 1)
+        self.assertFalse(fields["is_starred"])
 
 
 class AssignmentFourRegressionTest(TestCase):
@@ -774,3 +952,188 @@ class AssignmentFourRegressionTest(TestCase):
                 self.assertNotContains(response, self.experience.title)
                 self.assertNotContains(response, self.experience.description)
                 self.assertContains(response, "&lt;script&gt;")
+
+class TutorialFiveAjaxTest(TestCase):
+    def setUp(self):
+        self.owner = User.objects.create_user(
+            username="ajax-owner",
+            is_superuser=True,
+        )
+
+        self.reader = User.objects.create_user(
+            username="ajax-reader",
+        )
+
+        self.editor = User.objects.create_user(
+            username="ajax-editor",
+        )
+
+        group, _ = Group.objects.get_or_create(
+            name="Editor"
+        )
+        self.editor.groups.add(group)
+
+        self.url = reverse("main:create_project_ajax")
+
+        self.payload = {
+            "title": "Tutorial 5 Project",
+            "description": "Project untuk pengujian AJAX.",
+            "category": "web",
+            "year": 2026,
+            "project_url": "https://example.com/",
+            "project_image_url": "",
+        }
+
+    def test_owner_can_create_with_ajax(self):
+        self.client.force_login(self.owner)
+
+        response = self.client.post(
+            self.url,
+            self.payload,
+        )
+
+        self.assertEqual(response.status_code, 201)
+
+        project = Project.objects.get(
+            pk=response.json()["pk"]
+        )
+
+        self.assertEqual(
+            project.title,
+            self.payload["title"],
+        )
+        self.assertEqual(Project.objects.count(), 1)
+
+    def test_other_roles_cannot_create_with_ajax(self):
+        for user in (
+            None,
+            self.reader,
+            self.editor,
+        ):
+            with self.subTest(user=user):
+                self.client.logout()
+
+                if user:
+                    self.client.force_login(user)
+
+                response = self.client.post(
+                    self.url,
+                    self.payload,
+                )
+
+                self.assertEqual(
+                    response.status_code,
+                    403,
+                )
+                self.assertIn(
+                    "message",
+                    response.json(),
+                )
+
+        self.assertEqual(Project.objects.count(), 0)
+
+    def test_ajax_create_rejects_get(self):
+        self.client.force_login(self.owner)
+
+        response = self.client.get(self.url)
+
+        self.assertEqual(response.status_code, 405)
+        self.assertEqual(Project.objects.count(), 0)
+
+    def test_invalid_fields_do_not_create_records(self):
+        self.client.force_login(self.owner)
+
+        invalid_values = (
+            ("title", "   "),
+            (
+                "title",
+                '<img src="x" onerror="alert(1)">',
+            ),
+            ("description", "<b></b>"),
+            ("year", "-1"),
+            ("category", "not-a-category"),
+            ("project_url", "javascript:alert(1)"),
+            (
+                "project_image_url",
+                "javascript:alert(1)",
+            ),
+        )
+
+        for field, value in invalid_values:
+            with self.subTest(
+                field=field,
+                value=value,
+            ):
+                response = self.client.post(
+                    self.url,
+                    {
+                        **self.payload,
+                        field: value,
+                    },
+                )
+
+                self.assertEqual(
+                    response.status_code,
+                    400,
+                )
+
+                self.assertIn(
+                    field,
+                    response.json()["errors"],
+                )
+
+        self.assertEqual(Project.objects.count(), 0)
+
+    def test_html_tags_are_removed_from_new_text(self):
+        self.client.force_login(self.owner)
+
+        response = self.client.post(
+            self.url,
+            {
+                **self.payload,
+                "title": "Halo <b>dunia</b>",
+                "description": "Proyek <i>Django</i>",
+            },
+        )
+
+        self.assertEqual(response.status_code, 201)
+
+        project = Project.objects.get(
+            pk=response.json()["pk"]
+        )
+
+        self.assertEqual(
+            project.title,
+            "Halo dunia",
+        )
+        self.assertEqual(
+            project.description,
+            "Proyek Django",
+        )
+
+    def test_ajax_create_requires_valid_csrf(self):
+        from django.test import Client
+
+        client = Client(enforce_csrf_checks=True)
+        client.force_login(self.owner)
+
+        response = client.post(
+            self.url,
+            self.payload,
+        )
+
+        self.assertEqual(response.status_code, 403)
+        self.assertEqual(Project.objects.count(), 0)
+
+        client.get(reverse("main:show_projects"))
+
+        token = client.cookies["csrftoken"].value
+
+        response = client.post(
+            self.url,
+            self.payload,
+            HTTP_X_CSRFTOKEN=token,
+        )
+
+        self.assertEqual(response.status_code, 201)
+        self.assertEqual(Project.objects.count(), 1)

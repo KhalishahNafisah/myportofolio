@@ -30,12 +30,13 @@
 
             <div class="portfolio-actions">
                 {% if user.is_superuser %}
-                <a
+                <button
+                    type="button"
                     class="button"
-                    href="{% url 'main:create_project' %}"
+                    popovertarget="add-project-modal"
                 >
                     Add project
-                </a>
+                </button>
                 {% endif %}
             </div>
 
@@ -116,6 +117,10 @@
         </div>
     </section>
 </main>
+
+{% if user.is_superuser %}
+{% include "components/project_form_modal.html" %}
+{% endif %}
 
 <script src="{% static 'js/projects.js' %}" defer></script>
 {% endblock content %}

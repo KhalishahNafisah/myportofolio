@@ -1,97 +1,121 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block meta %}
-    <title>Khalishah Nafisah — Projects</title>
+<title>Khalishah Nafisah — Projects</title>
 {% endblock meta %}
 
 {% block content %}
-
-<main>
-    <section class="experience-section" id="projects">
+<main id="main">
+    <section
+        class="experience-section"
+        id="projects"
+        data-list-url="{% url 'main:get_projects_json' %}"
+        data-star-url="{% url 'main:toggle_star' '00000000-0000-0000-0000-000000000000' %}"
+        data-login-url="{% url 'main:login' %}"
+        data-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"
+        {% if user.is_superuser or is_editor %}
+        data-edit-url="{% url 'main:update_project' '00000000-0000-0000-0000-000000000000' %}"
+        {% endif %}
+        {% if user.is_superuser %}
+        data-delete-url="{% url 'main:delete_project' '00000000-0000-0000-0000-000000000000' %}"
+        {% endif %}
+    >
         <div class="container">
-            <p class="section-kicker">Things I have brought to life</p>
+            <p class="section-kicker">
+                Things I have brought to life
+            </p>
+
             <h1>Selected Projects</h1>
 
             <div class="portfolio-actions">
-            {% if user.is_superuser %}
-                <a class="button" href="{% url 'main:create_project' %}">
+                {% if user.is_superuser %}
+                <a
+                    class="button"
+                    href="{% url 'main:create_project' %}"
+                >
                     Add project
                 </a>
-            {% endif %}
+                {% endif %}
             </div>
 
-            <form method="get"
-                action="{% url 'main:show_projects' %}"
-                class="project-search">
-                <label class="project-search-field">
+            <form
+                id="project-search-form"
+                class="project-search"
+            >
+                <label
+                    class="project-search-field"
+                    for="search-input"
+                >
                     <span>Search projects</span>
-                    <input type="search"
+
+                    <input
+                        type="search"
+                        id="search-input"
                         name="title"
                         value="{{ title_query }}"
-                        placeholder="Search by project title">
+                        placeholder="Search by project title"
+                    >
                 </label>
 
-                <button type="submit" class="button">Search</button>
+                <button type="submit" class="button">
+                    Search
+                </button>
 
-                <a class="text-link" href="{% url 'main:show_projects' %}">
+                <button
+                    type="button"
+                    id="reset-search"
+                    class="button button-secondary"
+                >
                     Reset
-                </a>
+                </button>
             </form>
 
-            <div class="experience-grid">
-                {% for project in project_list %}
-                    <article class="experience-card">
-                        {% if project.project_image_url %}
-                            <img class="portfolio-project-image"
-                                src="{{ project.project_image_url }}"
-                                alt="{{ project.title }}"
-                                loading="lazy">
-                        {% endif %}
-                        <span class="experience-category">
-                            {{ project.get_category_display }}
-                        </span>
-
-                        <h2>{{ project.title }}</h2>
-
-                        <p class="experience-description">
-                            {{ project.description }}
-                        </p>
-
-                        <p class="experience-status">
-                            {{ project.year }}
-                        </p>
-
-                        {% if project.project_url %}
-                            <a
-                                href="{{ project.project_url }}"
-                                target="_blank"
-                                rel="noopener noreferrer"
-                                class="social-link"
-                            >
-                                View Project
-                            </a>
-                        {% endif %}
-                    <div class="portfolio-actions">
-                        {% include "components/project_star.html" with project=project %}
-
-                        {% if user.is_superuser or is_editor %}
-                            <a class="button button-secondary" href="{% url 'main:update_project' project.id %}">Edit</a>
-                        {% endif %}
-                        {% if user.is_superuser %}
-                            {% include "components/project_delete_modal.html" with project=project %}
-                        {% endif %}
-                    </div>
-                </article>
-                {% empty %}
-                    {% if title_query %}
-                        <p class="empty-state">No matching projects found.</p>
-                    {% else %}
-                        <p class="empty-state">No projects have been added yet.</p>
-                    {% endif %}
-                {% endfor %}
+            <div id="csrf-source" hidden>
+                {% csrf_token %}
             </div>
+
+            <div
+                id="loading"
+                class="empty-state"
+                role="status"
+            >
+                Memuat proyek...
+            </div>
+
+            <div
+                id="error"
+                class="empty-state hide"
+                role="alert"
+            >
+                Gagal memuat proyek.
+
+                <button
+                    type="button"
+                    id="retry-projects"
+                    class="button"
+                >
+                    Coba lagi
+                </button>
+            </div>
+
+            <div
+                id="empty"
+                class="empty-state hide"
+                role="status"
+            ></div>
+
+            <div
+                id="grid"
+                class="experience-grid hide"
+            ></div>
+
+            <noscript>
+                Aktifkan JavaScript untuk menampilkan daftar proyek.
+            </noscript>
         </div>
     </section>
 </main>
 
+<script src="{% static 'js/projects.js' %}" defer></script>
 {% endblock content %}

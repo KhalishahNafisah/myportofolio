@@ -4,7 +4,7 @@ from django.contrib.auth.decorators import login_required
 from django.contrib.auth.forms import AuthenticationForm, UserCreationForm
 from django.core import serializers
 from django.db.models import BooleanField, Count, Exists, OuterRef, Value
-from django.http import HttpResponse
+from django.http import HttpResponse, JsonResponse
 from django.shortcuts import get_object_or_404, redirect, render
 from django.urls import reverse
 from django.utils import timezone
@@ -103,21 +103,13 @@ def toggle_experience_star(request, experience_id):
     return redirect("main:show_experience")
 
 def show_projects(request):
-    response = get_projects_json(request)
-
-    project_list = deserialize_with_star_status(response, Project, request.user)
-
-    return render(
-        request,
-        "projects.html",
-        {
-            "logo": "KN",
-            "name": "Khalishah",
-            "project_list": project_list,
-            "is_editor": is_editor(request.user),
-            "title_query": request.GET.get("title", "").strip(),
-        },
-    )
+    return render(request, "projects.html", {
+        "logo": "KN",
+        "name": "Khalishah",
+        "is_editor": is_editor(request.user),
+        "title_query": request.GET.get("title", "").strip(),
+        "form": ProjectForm(),
+    })
 
 def show_about(request):
     return render(request, "detail.html", {"page_title": "About me", "section_template": "includes/about.html"})
@@ -155,19 +147,34 @@ def create_project(request):
 
 def get_projects_json(request):
     query = request.GET.get("title", "").strip()
-    queryset = Project.objects.order_by("-year", "title")
+
+    projects = Project.objects.order_by("-year", "title")
 
     if query:
-        queryset = queryset.filter(title__icontains=query)
+        projects = projects.filter(title__icontains=query)
 
-    return HttpResponse(
-        serializers.serialize(
-            "json",
-            queryset,
-            fields=("title", "description", "category", "year", "project_url", "project_image_url"),
-        ),
-        content_type="application/json",
-    )
+    projects = with_star_status(projects, request.user)
+
+    data = []
+
+    for project in projects:
+        data.append({
+            "model": "main.project",
+            "pk": str(project.pk),
+            "fields": {
+                "title": project.title,
+                "description": project.description,
+                "category": project.category,
+                "category_display": project.get_category_display(),
+                "year": project.year,
+                "project_url": project.project_url,
+                "project_image_url": project.project_image_url,
+                "star_count": project.star_count,
+                "is_starred": project.is_starred,
+            },
+        })
+
+    return JsonResponse(data, safe=False)
 
 @portfolio_permission_required(allow_editor=True)
 def update_project(request, project_id):

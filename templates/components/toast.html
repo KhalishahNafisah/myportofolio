@@ -1,0 +1,14 @@
+{% load static %}
+
+<div
+    id="toast-component"
+    class="toast-component toast-hidden"
+    popover="manual"
+    role="status"
+    aria-live="polite"
+>
+    <strong id="toast-title"></strong>
+    <p id="toast-message"></p>
+</div>
+
+<script src="{% static 'js/toast.js' %}"></script>

@@ -100,36 +100,8 @@ Saya menggunakan ChatGPT untuk memahami konsep, memperoleh panduan dan contoh ko
 
 4. **Session dan cookie.** Login menggunakan autentikasi Django serta cookie `last_login` untuk informasi waktu masuk. Cookie tersebut bukan bukti otorisasi; izin ditentukan dari pengguna yang diautentikasi melalui session. Tujuan `next` divalidasi agar login tidak mengarahkan pengguna ke situs luar. Logout memakai POST dengan CSRF, mengakhiri session, dan menghapus cookie `last_login`.
 
-Catatan: saat instruksi Tugas 4 diperiksa pada 28 September 2026, bagian pertanyaan reflektif masih berupa placeholder. Poin bernomor di atas merupakan penjelasan implementasi, bukan jawaban atas pertanyaan dosen yang belum dipublikasikan.
+Poin bernomor di atas merupakan penjelasan implementasi.
 
-#### Matriks hak akses
-
-Aturan ini berlaku untuk Experience dan Projects. Detail Experience serta daftar kedua bagian tetap dapat dibaca tanpa login.
-
-| Tindakan | Pengunjung | Pengguna biasa | Editor | Superuser |
-|---|---|---|---|---|
-| Membaca data dan JSON | Boleh | Boleh | Boleh | Boleh |
-| Star/unstar | Diarahkan ke login | Boleh | Boleh | Boleh |
-| Menambah | Diarahkan ke login | 403 | 403 | Boleh |
-| Mengedit | Diarahkan ke login | 403 | Boleh | Boleh |
-| Menghapus | Diarahkan ke login | 403 | 403 | Boleh |
-
-Star, hapus, dan logout tidak menerima GET untuk mengubah data. Pengguna yang memiliki izin akan mendapat 405 jika memakai GET pada endpoint POST tersebut. Permintaan POST tanpa token CSRF yang valid ditolak oleh middleware Django dengan 403, termasuk sebelum pemeriksaan login pada view.
-
-#### Mengatur Editor melalui Django Admin, langkah demi langkah
-
-1. Jalankan migrasi dan buat superuser melalui perintah setup di atas. Jika sudah memiliki superuser, gunakan akun tersebut.
-2. Buka `/register/` untuk membuat akun pengguna biasa yang nantinya akan menjadi Editor.
-3. Login ke `/admin/` sebagai superuser.
-4. Pada **Authentication and Authorization → Groups**, pilih **Add**.
-5. Isi **Name** dengan `Editor`, termasuk huruf E kapital. Simpan. Tidak perlu memilih permissions tambahan karena view memeriksa nama grup secara langsung.
-6. Buka **Users**, pilih akun yang akan menjadi Editor.
-7. Pada bagian **Groups**, pindahkan `Editor` dari **Available groups** ke **Chosen groups**, kemudian **Save**.
-8. Biarkan **Staff status** dan **Superuser status** tidak dicentang untuk Editor. Editor bekerja melalui form portofolio, bukan halaman administrasi.
-9. Logout dari akun pemilik, lalu login melalui `/login/` sebagai Editor. Tombol Edit tampil pada Experience dan Projects; tombol Add dan Delete tidak tampil.
-10. Untuk mencabut hak edit, kembali ke Admin sebagai pemilik, hapus keanggotaan grup Editor dari akun tersebut, lalu simpan.
-
-Grup dan keanggotaannya adalah data database, sehingga perlu disiapkan pada setiap lingkungan yang ingin digunakan. Tidak ada akun atau grup istimewa yang otomatis dibuat oleh registrasi maupun migrasi.
 
 #### Urutan implementasi
 
@@ -141,22 +113,8 @@ Grup dan keanggotaannya adalah data database, sehingga perlu disiapkan pada seti
 6. Memperbarui tes lama yang belum login saat melakukan aksi pemilik dan menambahkan tes peran, perubahan data, CSRF, star, kebocoran JSON, serta input tidak valid.
 7. Memeriksa halaman melalui browser dengan database pengujian terpisah, lalu mendokumentasikan hasilnya.
 
-#### Cara memverifikasi hasil
-
-```bash
-python manage.py check
-python manage.py makemigrations --check --dry-run
-python manage.py test
-python manage.py runserver
-```
-
-Penjelasan kode langkah demi langkah tersedia pada [panduan belajar Tugas 4](docs/panduan-belajar-tugas-4.md). Hasil pengujian dan skenario browser tercatat pada [catatan pengujian Tugas 4](docs/pengujian-tugas-4.md). Daftar file penting: `main/models.py`, `main/permissions.py`, `main/views.py`, `main/urls.py`, `main/tests.py`, serta template Experience dan Projects.
 
 Untuk pengujian manual, gunakan satu akun pemilik, satu anggota Editor, dan satu akun biasa. Periksa tampilan tombol, coba buka URL edit langsung, beri/batalkan star, lalu buka JSON tanpa login. Semua akun biasa tetap boleh memberi star meskipun tidak memiliki izin mengedit portofolio.
-
-#### Pengumpulan
-
-Setelah seluruh commit tersimpan dan pengujian selesai, push ke GitHub. Tautan yang dikumpulkan di SCELE berbentuk `https://github.com/KhalishahNafisah/myportofolio/commit/<hash-commit-final>`, bukan hanya alamat repository. Repository harus dapat dibaca publik. Pengumpulan SCELE perlu dilakukan melalui akun mahasiswa.
 
 ### AI Disclosure Tugas 4
 
@@ -169,4 +127,3 @@ Alur prompting dilakukan bertahap: pemeriksaan kebutuhan tugas
 dan kondisi proyek, penyusunan langkah pengerjaan untuk ditinjau,
 kemudian implementasi, pengujian, dan evaluasi hasil.
 Ringkasan prompting dan evaluasi keterbatasan AI dicatat pada
-[log bantuan AI Tugas 4](docs/ai-log-tugas-4.md).

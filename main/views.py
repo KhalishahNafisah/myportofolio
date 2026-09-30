@@ -345,3 +345,34 @@ def toggle_star(request, project_id):
         project.starred_by.add(request.user)
         messages.success(request, "Project diberi star.")
     return redirect("main:show_projects")
+
+@require_POST
+def create_project_ajax(request):
+    if not request.user.is_superuser:
+        return JsonResponse(
+            {
+                "message": (
+                    "Hanya pemilik portofolio "
+                    "yang dapat menambahkan proyek."
+                )
+            },
+            status=403,
+        )
+
+    form = ProjectForm(request.POST)
+
+    if not form.is_valid():
+        return JsonResponse(
+            {"errors": form.errors.get_json_data()},
+            status=400,
+        )
+
+    project = form.save()
+
+    return JsonResponse(
+        {
+            "message": "Proyek berhasil ditambahkan.",
+            "pk": str(project.pk),
+        },
+        status=201,
+    )

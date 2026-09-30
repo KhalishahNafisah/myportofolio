@@ -273,4 +273,93 @@ document
     .getElementById("retry-projects")
     .addEventListener("click", searchProjects);
 
+const projectForm = document.getElementById("project-form");
+
+function closeProjectModal() {
+    document
+        .getElementById("add-project-modal")
+        .hidePopover();
+}
+
+async function addProject(event) {
+    event.preventDefault();
+
+    const button = projectForm.querySelector(
+        'button[type="submit"]'
+    );
+
+    if (button.disabled) return;
+
+    button.disabled = true;
+
+    try {
+        const token = projectForm.querySelector(
+            '[name="csrfmiddlewaretoken"]'
+        ).value;
+
+        const response = await fetch(
+            projectForm.dataset.ajaxUrl,
+            {
+                method: "POST",
+                headers: {
+                    "X-CSRFToken": token,
+                    Accept: "application/json",
+                },
+                body: new FormData(projectForm),
+                credentials: "same-origin",
+            }
+        );
+
+        const result = await response
+            .json()
+            .catch(() => ({}));
+
+        if (!response.ok) {
+            const messages = result.errors
+                ? Object.values(result.errors)
+                    .flat()
+                    .map((error) => error.message)
+                : [
+                    result.message ||
+                    `Permintaan gagal (HTTP ${response.status}).`
+                ];
+
+            showToast(
+                "Gagal menyimpan",
+                messages.join(" "),
+                "error",
+                6000
+            );
+
+            return;
+        }
+
+        projectForm.reset();
+        closeProjectModal();
+
+        showToast(
+            "Berhasil",
+            "Proyek berhasil ditambahkan.",
+            "success"
+        );
+
+        await fetchProjects(searchInput.value.trim());
+    } catch (error) {
+        console.error(error);
+
+        showToast(
+            "Koneksi gagal",
+            "Periksa koneksi, lalu coba lagi.",
+            "error",
+            6000
+        );
+    } finally {
+        button.disabled = false;
+    }
+}
+
+if (projectForm) {
+    projectForm.addEventListener("submit", addProject);
+}
+
 fetchProjects(searchInput.value.trim());

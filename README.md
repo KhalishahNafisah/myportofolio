@@ -127,3 +127,17 @@ Alur prompting dilakukan bertahap: pemeriksaan kebutuhan tugas
 dan kondisi proyek, penyusunan langkah pengerjaan untuk ditinjau,
 kemudian implementasi, pengujian, dan evaluasi hasil.
 Ringkasan prompting dan evaluasi keterbatasan AI dicatat pada
+
+
+
+
+### TUGAS 5
+1. Debouncing adalah teknik menunda pencarian sampai pengguna berhenti mengetik selama waktu tertentu, misalnya 300 ms. Teknik ini menghindari request AJAX pada setiap ketikan sehingga mengurangi beban server dan penggunaan jaringan.
+2. await menunggu Promise dari fetch() selesai agar respons dapat digunakan. Tanpa await atau .then(), hasilnya masih berupa Promise, bukan objek respons. Pembacaan data melalui response.json() juga perlu ditunggu.
+3. XSS adalah serangan yang menyisipkan kode berbahaya ke halaman web agar dijalankan browser. Template Django secara default melakukan autoescaping, sedangkan JavaScript yang memasukkan data mentah melalui innerHTML dapat menjalankan HTML berbahaya. Gunakan textContent atau escaping yang tepat agar data ditampilkan dengan aman.
+
+
+### AI Disclosure Tugas 5
+Saya menggunakan ChatGPT untuk memeriksa kondisi proyek, memahami implementasi, serta menghasilkan contoh kode. AI juga membantu menjelaskan debouncing, await, dan XSS serta menyusun jawaban reflektif.
+
+Prompt diberikan secara bertahap, mulai dari meminta evaluasi proyek hingga panduan terperinci. AI tidak mengubah file atau menjalankan implementasi secara langsung. Penjelasan yang diberikan tetap perlu saya pahami dan verifikasi melalui pengujian backend serta browser.

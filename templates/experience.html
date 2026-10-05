@@ -31,12 +31,13 @@ cat > templates/experience.html <<'HTML'
 
             <div class="portfolio-actions">
                 {% if user.is_superuser %}
-                <a
+                <button
+                    type="button"
                     class="button"
-                    href="{% url 'main:create_experience' %}"
+                    popovertarget="add-experience-modal"
                 >
                     Add experience
-                </a>
+                </button>
                 {% endif %}
 
                 <a
@@ -131,10 +132,12 @@ cat > templates/experience.html <<'HTML'
     </section>
 </main>
 
-<!-- EXPERIENCE_MODAL -->
+{% if user.is_superuser %}
+{% include "components/experience_form_modal.html" %}
+{% endif %}
 
 <script src="{% static 'js/experiences.js' %}" defer></script>
 <script src="{% static 'js/experiences-search.js' %}" defer></script>
-<!-- EXPERIENCE_FORM_SCRIPT -->
+<script src="{% static 'js/experiences-form.js' %}" defer></script>
 {% endblock content %}
 HTML

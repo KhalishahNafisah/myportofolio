@@ -1,0 +1,50 @@
+<div
+    id="add-experience-modal"
+    class="project-form-modal"
+    popover="auto"
+    role="dialog"
+    aria-labelledby="add-experience-modal-title"
+>
+    <h2 id="add-experience-modal-title">
+        Tambah Experience
+    </h2>
+
+    <form
+        id="experience-form"
+        method="post"
+        action="{% url 'main:create_experience' %}"
+        data-ajax-url="{% url 'main:create_experience_ajax' %}"
+        novalidate
+    >
+        {% csrf_token %}
+
+        {% for field in form %}
+        <div class="portfolio-field">
+            <label for="{{ field.id_for_label }}">
+                {{ field.label }}
+            </label>
+
+            {{ field }}
+
+            {% if field.help_text %}
+            <small>{{ field.help_text }}</small>
+            {% endif %}
+        </div>
+        {% endfor %}
+
+        <div class="portfolio-actions">
+            <button
+                type="button"
+                class="button button-secondary"
+                popovertarget="add-experience-modal"
+                popovertargetaction="hide"
+            >
+                Batal
+            </button>
+
+            <button type="submit" class="button">
+                Simpan pengalaman
+            </button>
+        </div>
+    </form>
+</div>

@@ -396,3 +396,35 @@ def create_project_ajax(request):
         },
         status=201,
     )
+
+
+@require_POST
+def create_experience_ajax(request):
+    if not request.user.is_superuser:
+        return JsonResponse(
+            {
+                "message": (
+                    "Hanya pemilik portofolio yang dapat "
+                    "menambahkan pengalaman."
+                )
+            },
+            status=403,
+        )
+
+    form = ExperienceForm(request.POST)
+
+    if not form.is_valid():
+        return JsonResponse(
+            {"errors": form.errors.get_json_data()},
+            status=400,
+        )
+
+    experience = form.save()
+
+    return JsonResponse(
+        {
+            "message": "Experience berhasil ditambahkan.",
+            "pk": str(experience.pk),
+        },
+        status=201,
+    )

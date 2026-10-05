@@ -117,3 +117,25 @@ class ExperienceForm(forms.ModelForm):
                 },
             ),
         }
+
+    def clean_title(self):
+        title = strip_tags(self.cleaned_data["title"]).strip()
+
+        if not title:
+            raise ValidationError(
+                "Judul pengalaman tidak boleh hanya berisi tag HTML."
+            )
+
+        return title
+
+    def clean_description(self):
+        description = strip_tags(
+            self.cleaned_data["description"]
+        ).strip()
+
+        if not description:
+            raise ValidationError(
+                "Deskripsi pengalaman tidak boleh hanya berisi tag HTML."
+            )
+
+        return description

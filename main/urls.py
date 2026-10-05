@@ -22,11 +22,17 @@ from main.views import (
     toggle_experience_star,
     experience_detail,
     create_project_ajax,
+    create_experience_ajax,
 )
 
 app_name = "main"
 
 urlpatterns = [
+    path(
+        "experience/add-ajax/",
+        create_experience_ajax,
+        name="create_experience_ajax",
+    ),
     path("", show_main, name="show_main"),
     path("about/", show_about, name="show_about"),
     path("life/", show_life, name="show_life"),

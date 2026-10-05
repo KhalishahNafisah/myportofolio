@@ -63,16 +63,11 @@ def show_main(request):
 
 
 def show_experience(request):
-    experiences = with_star_status(
-        Experience.objects.order_by("-started_at", "title"),
-        request.user,
-    )
-
     return render(request, "experience.html", {
         "logo": "KN",
         "name": "Khalishah",
-        "experience_list": experiences,
         "is_editor": is_editor(request.user),
+        "title_query": request.GET.get("title", "").strip(),
     })
 
 

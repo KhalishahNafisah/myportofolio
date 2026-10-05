@@ -1,83 +1,108 @@
+cat > templates/experience.html <<'HTML'
 {% extends "base.html" %}
+{% load static %}
 
 {% block meta %}
-    <title>Khalishah Nafisah — Work</title>
+<title>Khalishah Nafisah — Work</title>
 {% endblock meta %}
 
 {% block content %}
-
 <main id="main">
     {% include 'includes/selected_work.html' %}
-    <section class="experience-section" id="experience">
+
+    <section
+        class="experience-section"
+        id="experience"
+        data-list-url="{% url 'main:get_experiences_json' %}"
+        data-detail-url="{% url 'main:experience_detail' '00000000-0000-0000-0000-000000000000' %}"
+        data-star-url="{% url 'main:toggle_experience_star' '00000000-0000-0000-0000-000000000000' %}"
+        data-login-url="{% url 'main:login' %}"
+        data-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"
+        {% if user.is_superuser or is_editor %}
+        data-edit-url="{% url 'main:update_experience' '00000000-0000-0000-0000-000000000000' %}"
+        {% endif %}
+        {% if user.is_superuser %}
+        data-delete-url="{% url 'main:delete_experience' '00000000-0000-0000-0000-000000000000' %}"
+        {% endif %}
+    >
         <div class="container">
             <p class="section-kicker">Perjalanan saya sejauh ini</p>
             <h1>More work</h1>
+
             <div class="portfolio-actions">
                 {% if user.is_superuser %}
-                <a class="button"
-                href="{% url 'main:create_experience' %}">
+                <a
+                    class="button"
+                    href="{% url 'main:create_experience' %}"
+                >
                     Add experience
                 </a>
                 {% endif %}
 
-                <a class="button button-secondary"
-                href="{% url 'main:get_experiences_json' %}">
+                <a
+                    class="button button-secondary"
+                    href="{% url 'main:get_experiences_json' %}"
+                >
                     View JSON
                 </a>
             </div>
 
-            <div class="experience-grid">
-                {% for experience in experience_list %}
-                    <article class="experience-card">
-                        {% if experience.thumbnail %}
-                            <img class="portfolio-project-image"
-                                src="{{ experience.thumbnail }}"
-                                alt="{{ experience.title }}"
-                                loading="lazy">
-                        {% endif %}
-                        <span class="experience-category">
-                            {{ experience.get_category_display }}
-                        </span>
-                        <h2><a href="{% url 'main:experience_detail' experience.id %}">{{ experience.title }}</a></h2>
-                        <p class="experience-description">
-                            {{ experience.description }}
-                        </p>
+            <!-- EXPERIENCE_SEARCH -->
 
-                        {% if experience.is_ongoing %}
-                            <p class="experience-status">Sedang berlangsung</p>
-                        {% else %}
-                            <p class="experience-status">Selesai</p>
-                        {% endif %}
-                        <div class="portfolio-actions">
-                            {% include "components/experience_star.html" %}
-                            {% if user.is_superuser or is_editor %}
-                            <a class="button button-secondary"
-                            href="{% url 'main:update_experience' experience.id %}">
-                                Edit
-                            </a>
-                            {% endif %}
-
-                            {% if user.is_superuser %}
-                            <form method="post"
-                                action="{% url 'main:delete_experience' experience.id %}"
-                                onsubmit="return confirm('Hapus experience ini?');">
-                                {% csrf_token %}
-
-                                <button type="submit" class="button button-danger">
-                                    Delete
-                                </button>
-                            </form>
-                            {% endif %}
-                        </div>
-                    </article>
-                {% empty %}
-                    <p class="empty-state">
-                        Belum ada pengalaman yang ditambahkan.
-                    </p>
-                {% endfor %}
+            <div id="experience-csrf-source" hidden>
+                {% csrf_token %}
             </div>
+
+            <div
+                id="experience-loading"
+                class="empty-state"
+                role="status"
+                aria-live="polite"
+            >
+                Memuat pengalaman...
+            </div>
+
+            <div
+                id="experience-error"
+                class="empty-state hide"
+                role="alert"
+            >
+                <p>Gagal memuat pengalaman. Silakan coba lagi.</p>
+
+                <button
+                    type="button"
+                    id="experience-retry"
+                    class="button"
+                >
+                    Coba lagi
+                </button>
+            </div>
+
+            <div
+                id="experience-empty"
+                class="empty-state hide"
+                role="status"
+                aria-live="polite"
+            >
+                Belum ada pengalaman yang ditambahkan.
+            </div>
+
+            <div
+                id="experience-grid"
+                class="experience-grid hide"
+            ></div>
+
+            <noscript>
+                Aktifkan JavaScript untuk menampilkan daftar pengalaman.
+            </noscript>
         </div>
     </section>
 </main>
 
+<!-- EXPERIENCE_MODAL -->
+
+<script src="{% static 'js/experiences.js' %}" defer></script>
+<!-- EXPERIENCE_SEARCH_SCRIPT -->
+<!-- EXPERIENCE_FORM_SCRIPT -->
 {% endblock content %}
+HTML

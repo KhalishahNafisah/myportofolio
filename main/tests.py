@@ -44,26 +44,51 @@ class MainTest(TestCase):
 
         self.assertEqual(response.status_code, 200)
         self.assertTemplateUsed(response, "experience.html")
-        self.assertContains(response, self.experience.title)
-        self.assertContains(response, self.experience.description)
-        self.assertContains(response, "Part-Time")
-        self.assertContains(response, "Sedang berlangsung")
-        self.assertContains(response, f'href="{reverse("main:show_main")}"')
+        self.assertContains(response, 'id="experience-grid"')
+        self.assertContains(
+            response,
+            reverse("main:get_experiences_json"),
+        )
+        self.assertNotContains(response, self.experience.title)
+
+        data = self.client.get(
+            reverse("main:get_experiences_json")
+        ).json()
+
+        fields = data[0]["fields"]
+
+        self.assertEqual(fields["title"], self.experience.title)
+        self.assertEqual(
+            fields["description"],
+            self.experience.description,
+        )
+        self.assertEqual(fields["category_display"], "Part-Time")
+        self.assertTrue(fields["is_ongoing"])
 
     def test_empty_experience_page(self):
         Experience.objects.all().delete()
-        response = self.client.get(reverse("main:show_experience"))
 
-        self.assertContains(response, "Belum ada pengalaman yang ditambahkan.")
+        page = self.client.get(reverse("main:show_experience"))
+        response = self.client.get(
+            reverse("main:get_experiences_json")
+        )
+
+        self.assertContains(page, 'id="experience-empty"')
+        self.assertEqual(response.json(), [])
 
     def test_completed_experience(self):
         self.experience.ended_at = timezone.now()
         self.experience.save()
-        response = self.client.get(reverse("main:show_experience"))
+
+        response = self.client.get(
+            reverse("main:get_experiences_json")
+        )
+
+        fields = response.json()[0]["fields"]
 
         self.assertFalse(self.experience.is_ongoing)
-        self.assertContains(response, "Selesai")
-        self.assertNotContains(response, "Sedang berlangsung")
+        self.assertFalse(fields["is_ongoing"])
+        self.assertIsNotNone(fields["ended_at"])
 
     def test_projects_url_is_accessible_and_uses_correct_template(self):
         response = self.client.get(reverse("main:show_projects"))
@@ -466,14 +491,38 @@ class ExperienceAccessTest(TestCase):
         ):
             with self.subTest(user=user):
                 self.client.logout()
+
                 if user:
                     self.client.force_login(user)
-                response = self.client.get(reverse("main:show_experience"))
+
+                page = self.client.get(
+                    reverse("main:show_experience")
+                )
+
+                self.assertEqual(page.status_code, 200)
+                self.assertContains(page, 'id="experience-grid"')
+
+                for marker, visible in (
+                    ('Add experience', create),
+                    ('data-edit-url=', update),
+                    ('data-delete-url=', delete),
+                ):
+                    assertion = (
+                        self.assertContains
+                        if visible
+                        else self.assertNotContains
+                    )
+                    assertion(page, marker)
+
+                response = self.client.get(
+                    reverse("main:get_experiences_json")
+                )
+
                 self.assertEqual(response.status_code, 200)
-                self.assertContains(response, self.experience.title)
-                for action, visible in (("create", create), ("update", update), ("delete", delete)):
-                    assertion = self.assertContains if visible else self.assertNotContains
-                    assertion(response, self.urls[action])
+                self.assertEqual(
+                    response.json()[0]["fields"]["title"],
+                    self.experience.title,
+                )
 
     def test_staff_flag_alone_does_not_grant_portfolio_access(self):
         self.regular.is_staff = True
@@ -534,17 +583,37 @@ class ExperienceStarTest(TestCase):
 
     def test_list_and_detail_show_public_count_and_personal_state(self):
         self.experience.starred_by.add(self.user, self.other)
-        for url in (reverse("main:show_experience"), self.detail_url):
-            with self.subTest(url=url):
-                response = self.client.get(url)
-                self.assertContains(response, "Login to star")
-                self.assertContains(response, '<span class="star-count">2</span>', html=True)
-                self.assertNotContains(response, self.other.username)
-                self.client.force_login(self.user)
-                response = self.client.get(url)
-                self.assertContains(response, 'aria-pressed="true"')
-                self.assertContains(response, "Unstar")
-                self.client.logout()
+
+        response = self.client.get(
+            reverse("main:get_experiences_json")
+        )
+
+        fields = response.json()[0]["fields"]
+        self.assertEqual(fields["star_count"], 2)
+        self.assertFalse(fields["is_starred"])
+        self.assertNotContains(response, self.other.username)
+
+        detail = self.client.get(self.detail_url)
+        self.assertContains(detail, "Login to star")
+        self.assertContains(
+            detail,
+            '<span class="star-count">2</span>',
+            html=True,
+        )
+
+        self.client.force_login(self.user)
+
+        response = self.client.get(
+            reverse("main:get_experiences_json")
+        )
+        fields = response.json()[0]["fields"]
+
+        self.assertEqual(fields["star_count"], 2)
+        self.assertTrue(fields["is_starred"])
+
+        detail = self.client.get(self.detail_url)
+        self.assertContains(detail, 'aria-pressed="true"')
+        self.assertContains(detail, "Unstar")
 
     def test_star_returns_to_detail_when_requested(self):
         self.client.force_login(self.user)
@@ -948,12 +1017,32 @@ class AssignmentFourRegressionTest(TestCase):
         self.experience.title = '<script>alert("unsafe")</script>'
         self.experience.description = '<img src=x onerror=alert("unsafe")>'
         self.experience.save()
-        for url in (reverse("main:show_experience"), reverse("main:experience_detail", args=[self.experience.pk])):
-            with self.subTest(url=url):
-                response = self.client.get(url)
-                self.assertNotContains(response, self.experience.title)
-                self.assertNotContains(response, self.experience.description)
-                self.assertContains(response, "&lt;script&gt;")
+
+        page = self.client.get(reverse("main:show_experience"))
+
+        self.assertNotContains(page, self.experience.title)
+        self.assertNotContains(page, self.experience.description)
+        self.assertContains(page, 'id="experience-grid"')
+
+        detail = self.client.get(
+            reverse(
+                "main:experience_detail",
+                args=[self.experience.pk],
+            )
+        )
+
+        self.assertNotContains(detail, self.experience.title)
+        self.assertNotContains(detail, self.experience.description)
+        self.assertContains(detail, "&lt;script&gt;")
+
+        response = self.client.get(
+            reverse("main:get_experiences_json")
+        )
+
+        self.assertEqual(
+            response.json()[0]["fields"]["title"],
+            self.experience.title,
+        )
 
 class TutorialFiveAjaxTest(TestCase):
     def setUp(self):

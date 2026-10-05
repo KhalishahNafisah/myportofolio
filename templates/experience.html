@@ -47,7 +47,39 @@ cat > templates/experience.html <<'HTML'
                 </a>
             </div>
 
-            <!-- EXPERIENCE_SEARCH -->
+            <form
+                id="experience-search-form"
+                class="project-search"
+                role="search"
+            >
+                <label
+                    class="project-search-field"
+                    for="experience-search"
+                >
+                    <span>Cari pengalaman</span>
+
+                    <input
+                        type="search"
+                        id="experience-search"
+                        name="title"
+                        value="{{ title_query }}"
+                        placeholder="Cari berdasarkan judul pengalaman"
+                        autocomplete="off"
+                    >
+                </label>
+
+                <button type="submit" class="button">
+                    Cari
+                </button>
+
+                <button
+                    type="button"
+                    id="experience-search-reset"
+                    class="button button-secondary"
+                >
+                    Reset
+                </button>
+            </form>
 
             <div id="experience-csrf-source" hidden>
                 {% csrf_token %}
@@ -102,7 +134,7 @@ cat > templates/experience.html <<'HTML'
 <!-- EXPERIENCE_MODAL -->
 
 <script src="{% static 'js/experiences.js' %}" defer></script>
-<!-- EXPERIENCE_SEARCH_SCRIPT -->
+<script src="{% static 'js/experiences-search.js' %}" defer></script>
 <!-- EXPERIENCE_FORM_SCRIPT -->
 {% endblock content %}
 HTML

@@ -193,10 +193,14 @@ def delete_project(request, project_id):
 
 
 def get_experiences_json(request):
-    experiences = with_star_status(
-        Experience.objects.order_by("-started_at", "title"),
-        request.user,
-    )
+    query = request.GET.get("title", "").strip()
+
+    queryset = Experience.objects.order_by("-started_at", "title")
+
+    if query:
+        queryset = queryset.filter(title__icontains=query)
+
+    experiences = with_star_status(queryset, request.user)
 
     data = []
 

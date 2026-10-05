@@ -63,18 +63,17 @@ def show_main(request):
 
 
 def show_experience(request):
-    response = get_experiences_json(request)
+    experiences = with_star_status(
+        Experience.objects.order_by("-started_at", "title"),
+        request.user,
+    )
 
-    experience_list = deserialize_with_star_status(response, Experience, request.user)
-
-    context = {
+    return render(request, "experience.html", {
         "logo": "KN",
         "name": "Khalishah",
-        "experience_list": experience_list,
+        "experience_list": experiences,
         "is_editor": is_editor(request.user),
-    }
-
-    return render(request, "experience.html", context)
+    })
 
 
 def experience_detail(request, experience_id):
@@ -199,14 +198,36 @@ def delete_project(request, project_id):
 
 
 def get_experiences_json(request):
-    experiences = Experience.objects.order_by("-started_at", "title")
-
-    return HttpResponse(
-        serializers.serialize("json", experiences, fields=(
-            "title", "description", "category", "thumbnail", "started_at", "ended_at",
-        )),
-        content_type="application/json",
+    experiences = with_star_status(
+        Experience.objects.order_by("-started_at", "title"),
+        request.user,
     )
+
+    data = []
+
+    for experience in experiences:
+        data.append({
+            "model": "main.experience",
+            "pk": str(experience.pk),
+            "fields": {
+                "title": experience.title,
+                "description": experience.description,
+                "category": experience.category,
+                "category_display": experience.get_category_display(),
+                "thumbnail": experience.thumbnail or "",
+                "started_at": experience.started_at.isoformat(),
+                "ended_at": (
+                    experience.ended_at.isoformat()
+                    if experience.ended_at
+                    else None
+                ),
+                "is_ongoing": experience.is_ongoing,
+                "star_count": experience.star_count,
+                "is_starred": experience.is_starred,
+            },
+        })
+
+    return JsonResponse(data, safe=False)
 
 @portfolio_permission_required()
 def create_experience(request):

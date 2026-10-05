@@ -568,7 +568,9 @@ class ExperienceStarTest(TestCase):
         self.assertEqual(item["model"], "main.experience")
         self.assertEqual(item["pk"], str(self.experience.pk))
         self.assertEqual(set(item["fields"]), {
-            "title", "description", "category", "thumbnail", "started_at", "ended_at",
+            "title", "description", "category", "category_display",
+            "thumbnail", "started_at", "ended_at", "is_ongoing",
+            "star_count", "is_starred",
         })
         self.assertNotContains(response, self.user.username)
         self.assertNotContains(response, "starred_by")

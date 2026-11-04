@@ -4,29 +4,13 @@
     const form = document.getElementById("experience-form");
     const modal = document.getElementById("add-experience-modal");
 
-    if (!form || !modal) return;
+    if (!form) return;
 
     const submitButton = form.querySelector(
         'button[type="submit"]'
     );
 
     if (!submitButton) return;
-
-    function validationMessage(result, status) {
-        if (result.errors) {
-            const messages = Object.values(result.errors)
-                .flat()
-                .map((error) => error.message)
-                .filter(Boolean);
-
-            if (messages.length) {
-                return messages.join(" ");
-            }
-        }
-
-        return result.message ||
-            `Permintaan gagal (HTTP ${status}). Silakan coba lagi.`;
-    }
 
     form.addEventListener("submit", async (event) => {
         event.preventDefault();
@@ -48,51 +32,40 @@
                 throw new Error("Token CSRF tidak ditemukan.");
             }
 
-            const response = await fetch(form.dataset.ajaxUrl, {
-                method: "POST",
-                headers: {
-                    Accept: "application/json",
-                    "X-CSRFToken": csrfInput.value,
-                },
-                body: new FormData(form),
-                credentials: "same-origin",
-            });
+            const method = form.dataset.apiMethod || "POST";
+            await window.ExperienceAPI.write(
+                form.dataset.ajaxUrl,
+                method,
+                window.ExperienceAPI.formPayload(form),
+                csrfInput.value
+            );
 
-            const result = await response.json().catch(() => ({}));
+            if (method === "POST") form.reset();
 
-            if (!response.ok) {
-                showToast(
-                    "Gagal menyimpan",
-                    validationMessage(result, response.status),
-                    "error",
-                    7000
-                );
-
-                return;
-            }
-
-            form.reset();
-
-            if (modal.matches(":popover-open")) {
+            if (modal?.matches(":popover-open")) {
                 modal.hidePopover();
             }
 
             showToast(
                 "Berhasil",
-                result.message || "Experience berhasil ditambahkan.",
+                method === "PATCH"
+                    ? "Experience berhasil diperbarui."
+                    : "Experience berhasil ditambahkan.",
                 "success",
                 4000
             );
 
-            document.dispatchEvent(
-                new Event("experience:created")
-            );
+            if (method === "POST") {
+                document.dispatchEvent(new Event("experience:created"));
+            }
         } catch (error) {
             console.error("Gagal menyimpan Experience:", error);
 
             showToast(
                 "Permintaan gagal",
-                "Periksa koneksi. Jika koneksi terputus saat menyimpan, periksa daftar sebelum mengirim ulang.",
+                error instanceof TypeError
+                    ? "Periksa koneksi. Jika koneksi terputus saat menyimpan, periksa daftar sebelum mengirim ulang."
+                    : error.message,
                 "error",
                 7000
             );

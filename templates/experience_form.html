@@ -1,4 +1,5 @@
 {% extends "base.html" %}
+{% load static %}
 
 {% block meta %}
     <title>{{ page_title }} — Khalishah Nafisah</title>
@@ -11,7 +12,14 @@
                 <p class="section-kicker">My journey</p>
                 <h1>{{ page_title }}</h1>
 
-                <form method="post" class="portfolio-form">
+                <form
+                    id="experience-form"
+                    method="post"
+                    class="portfolio-form"
+                    data-ajax-url="{{ experience_api_url }}"
+                    data-api-method="{{ experience_api_method }}"
+                    novalidate
+                >
                     {% csrf_token %}
 
                     {{ form.non_field_errors }}
@@ -43,4 +51,6 @@
             </div>
         </section>
     </main>
+    <script src="{% static 'js/experiences-api.js' %}" defer></script>
+    <script src="{% static 'js/experiences-form.js' %}" defer></script>
 {% endblock content %}

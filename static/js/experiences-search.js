@@ -42,7 +42,6 @@
 
     document.addEventListener("experience:created", () => {
         clearPendingSearch();
-        input.value = "";
-        list.load("");
+        list.load(input.value.trim());
     });
 })();

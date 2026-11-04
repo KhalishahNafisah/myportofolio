@@ -253,6 +253,8 @@ def create_experience(request):
             "form": form,
             "page_title": "Add experience",
             "submit_label": "Save experience",
+            "experience_api_url": reverse("api:experience-list"),
+            "experience_api_method": "POST",
         },
     )
 
@@ -288,6 +290,10 @@ def update_experience(request, experience_id):
             "form": form,
             "page_title": "Edit experience",
             "submit_label": "Save changes",
+            "experience_api_url": reverse(
+                "api:experience-detail", args=[experience.pk],
+            ),
+            "experience_api_method": "PATCH",
         },
     )
 

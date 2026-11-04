@@ -47,7 +47,7 @@ class MainTest(TestCase):
         self.assertContains(response, 'id="experience-grid"')
         self.assertContains(
             response,
-            reverse("main:get_experiences_json"),
+            reverse("api:experience-list"),
         )
         self.assertNotContains(response, self.experience.title)
 

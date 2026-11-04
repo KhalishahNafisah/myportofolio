@@ -1,6 +1,6 @@
 # Portofolio Khalishah Nafisah
 
-Website portofolio untuk mata kuliah Pemrograman Berbasis Platform, menggunakan Django, HTML, CSS, dan JavaScript. Bagian dinamisnya mencakup Projects dan Experience, form pengelolaan data, API JSON publik, autentikasi, dan star per pengguna. API Django REST Framework (DRF) tersedia untuk Projects dan Experience. Halaman Projects menggunakan `/api/v1/projects/`; halaman Experience masih menggunakan endpoint JSON dan AJAX sebelumnya sampai tahap integrasi frontend berikutnya.
+Website portofolio untuk mata kuliah Pemrograman Berbasis Platform, menggunakan Django, HTML, CSS, dan JavaScript. Bagian dinamisnya mencakup Projects dan Experience, form pengelolaan data, API JSON publik, autentikasi, dan star per pengguna. API Django REST Framework (DRF) tersedia untuk Projects dan Experience. Daftar Projects dan Experience menggunakan AJAX melalui `/api/v1/projects/` dan `/api/v1/experiences/`.
 
 ## Menjalankan proyek dari awal
 
@@ -161,7 +161,9 @@ Model Experience yang sudah ada digunakan kembali melalui `ExperienceSerializer`
 
 Flag `is_staff` saja tidak memberikan hak kelola. Field `id`, `started_at`, label kategori, dan hasil perhitungan tidak dapat diubah klien. `ended_at: null` menandakan pengalaman masih berlangsung; datetime yang valid menandakan selesai. String kosong bukan datetime API yang valid. Data akun pemberi star tidak ditampilkan.
 
-Pada checkpoint backend ini, frontend Experience tetap memakai endpoint lama `/api/experiences/` dan form HTML sebelumnya. Integrasi AJAX ke API DRF dilakukan pada tahap berikutnya.
+Daftar Experience membaca JSON datar dari API DRF. Modal tambah dan halaman form tambah menggunakan POST; halaman edit pemilik/Editor menggunakan PATCH dan menampilkan toast setelah berhasil. Submit HTML lama tetap tersedia bila JavaScript tidak aktif. Tombol star dan hapus pada daftar menggunakan POST dan DELETE dengan session serta token CSRF; respons delete 204 tidak diparse sebagai JSON.
+
+Pencarian mempertahankan debounce 300 ms, pembatalan request lama, loading/empty/error state, Reset, dan Coba lagi. Setelah perubahan data, daftar dimuat ulang dengan kata pencarian yang masih aktif. Teks kartu dirender melalui `textContent` dan URL gambar dibatasi ke HTTP/HTTPS. Input tanggal selesai tetap diartikan sebagai UTC sesuai label form: nilai terisi dikirim dengan akhiran `Z`, sedangkan nilai kosong dikirim sebagai `null`.
 
 ### Pengujian API
 
@@ -171,7 +173,9 @@ python manage.py test main.tests_experience_api --verbosity 2
 python manage.py test main
 ```
 
-Hasil lokal pada 4 November 2026: 13 test API Projects, 14 test API Experience, dan total 105 test app `main` lulus. Test Experience mencakup akses publik, pencarian, validasi, CRUD, izin Editor/staff, pencabutan grup Editor, field read-only, datetime, star per akun, dan session dengan/tanpa CSRF. Data uji dibuat dalam database pengujian terpisah. Django system check berhasil dan tidak ada perubahan model yang membutuhkan migrasi baru.
+Hasil lokal pada 4 November 2026: 13 test API Projects, 16 test Experience (14 API dan 2 integrasi template), dan total 107 test app `main` lulus. Test Experience mencakup akses publik, pencarian, validasi, CRUD, izin Editor/staff, pencabutan grup Editor, field read-only, datetime, star per akun, session dengan/tanpa CSRF, serta hubungan template/form ke endpoint DRF. Data uji dibuat dalam database pengujian terpisah. Django system check berhasil dan tidak ada perubahan model yang membutuhkan migrasi baru.
+
+Pengujian browser dengan database sementara memverifikasi pencarian, hasil kosong, create 201, validasi 400 beserta toast, PATCH 200 oleh Editor, star/unstar 200 oleh akun biasa, dan delete 204 oleh pemilik. Tanggal UTC tersimpan tanpa bergeser; mengosongkan tanggal selesai mengubah status menjadi sedang berlangsung. Pemeriksaan JavaScript juga mencakup payload JSON, header session/CSRF, respons 204, dan pesan error API.
 
 ### Sumber dan disclosure bantuan AI
 
@@ -182,4 +186,4 @@ Hasil lokal pada 4 November 2026: 13 test API Projects, 14 test API Experience, 
 
 Saya menggunakan ChatGPT untuk memahami tutorial, membandingkan contoh dengan kondisi proyek, dan membantu cross check jika ada yang kurang tepat atau salah. Backend awal sampai akhir diterapkan berdasarkan pemahaman tersebut.
 
-Pada tahap lanjutan, saya meminta Codex menambahkan API Experience, permission Editor, dan pengujian otomatis; commit tetap saya lakukan sendiri.
+Pada tahap lanjutan, saya meminta Codex menambahkan API Experience, permission Editor, integrasi AJAX pada daftar dan form, serta pengujian otomatis dan browser; commit tetap saya lakukan sendiri.

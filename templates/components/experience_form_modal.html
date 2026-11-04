@@ -13,7 +13,8 @@
         id="experience-form"
         method="post"
         action="{% url 'main:create_experience' %}"
-        data-ajax-url="{% url 'main:create_experience_ajax' %}"
+        data-ajax-url="{% url 'api:experience-list' %}"
+        data-api-method="POST"
         novalidate
     >
         {% csrf_token %}

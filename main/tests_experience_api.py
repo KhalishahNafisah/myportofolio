@@ -75,6 +75,46 @@ class ExperienceAPITest(APITestCase):
                 self.assertEqual(self.client.options(url).status_code, 200)
         self.assertEqual(self.experience.starred_by.count(), 1)
 
+    def test_list_page_uses_drf_api_and_csrf(self):
+        response = self.client.get(reverse("main:show_experience"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'data-list-url="{self.list_url}"')
+        self.assertContains(response, 'id="experience-csrf-source"')
+        self.assertContains(response, 'name="csrfmiddlewaretoken"')
+        self.assertContains(response, "js/experiences-api.js")
+        self.assertNotContains(response, "cat > templates/experience.html")
+        self.assertNotContains(response, 'id="experience-form"')
+
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("main:show_experience"))
+        self.assertContains(response, f'data-ajax-url="{self.list_url}"')
+        self.assertContains(response, 'data-api-method="POST"')
+        self.assertContains(response, 'id="experience-form"')
+
+    def test_form_pages_use_api_with_html_fallback(self):
+        self.client.force_login(self.owner)
+        response = self.client.get(reverse("main:create_experience"))
+        self.assertEqual(response.status_code, 200)
+        self.assertContains(response, f'data-ajax-url="{self.list_url}"')
+        self.assertContains(response, 'data-api-method="POST"')
+        self.assertContains(response, 'method="post"')
+
+        edit_url = reverse("main:update_experience", args=[self.experience.pk])
+        for user in (self.owner, self.editor):
+            with self.subTest(user=user):
+                self.client.force_login(user)
+                response = self.client.get(edit_url)
+                self.assertEqual(response.status_code, 200)
+                self.assertContains(response, f'data-ajax-url="{self.detail_url}"')
+                self.assertContains(response, 'data-api-method="PATCH"')
+                self.assertContains(response, 'name="csrfmiddlewaretoken"')
+                self.assertContains(response, "js/experiences-api.js")
+                self.assertContains(response, "js/experiences-form.js")
+                self.assertEqual(response.context["form"].instance.pk, self.experience.pk)
+
+        self.client.force_login(self.visitor)
+        self.assertEqual(self.client.get(edit_url).status_code, 403)
+
     def test_search_and_empty_results(self):
         newer = Experience.objects.create(
             title="Community event", description="Another experience",

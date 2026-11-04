@@ -65,21 +65,11 @@ window.ExperienceList = (() => {
         );
     }
 
-    function addCsrf(form) {
-        if (!csrfSource) {
-            throw new Error("Token CSRF halaman tidak ditemukan.");
-        }
-
-        form.append(csrfSource.cloneNode(true));
-    }
-
-    function buildStarControl(item) {
-        const fields = item.fields;
-
+    function buildStarControl(experience) {
         const count = element(
             "span",
             "star-count",
-            fields.star_count
+            experience.star_count
         );
 
         if (page.dataset.authenticated !== "true") {
@@ -105,19 +95,7 @@ window.ExperienceList = (() => {
             return login;
         }
 
-        const form = element("form", "star-form");
-        form.method = "post";
-        form.action = route(page.dataset.starUrl, item.pk);
-
-        addCsrf(form);
-
-        const next = element("input");
-        next.type = "hidden";
-        next.name = "next";
-        next.value = location.pathname;
-        form.append(next);
-
-        const isStarred = Boolean(fields.is_starred);
+        const isStarred = Boolean(experience.is_starred);
 
         const button = element(
             "button",
@@ -125,7 +103,9 @@ window.ExperienceList = (() => {
             `★ ${isStarred ? "Unstar" : "Star"} `
         );
 
-        button.type = "submit";
+        button.type = "button";
+        button.dataset.action = "star";
+        button.dataset.id = experience.id;
         button.setAttribute(
             "aria-pressed",
             isStarred ? "true" : "false"
@@ -133,25 +113,22 @@ window.ExperienceList = (() => {
 
         button.setAttribute(
             "aria-label",
-            `${isStarred ? "Batalkan star" : "Beri star"} untuk ${fields.title}`
+            `${isStarred ? "Batalkan star" : "Beri star"} untuk ${experience.title}`
         );
 
         button.append(count);
-        form.append(button);
-
-        return form;
+        return button;
     }
 
-    function buildCard(item) {
-        const fields = item.fields;
+    function buildCard(experience) {
         const article = element("article", "experience-card");
 
-        const imageUrl = safeHttpUrl(fields.thumbnail);
+        const imageUrl = safeHttpUrl(experience.thumbnail);
 
         if (imageUrl) {
             const image = element("img", "portfolio-project-image");
             image.src = imageUrl;
-            image.alt = String(fields.title ?? "");
+            image.alt = String(experience.title ?? "");
             image.loading = "lazy";
             article.append(image);
         }
@@ -160,14 +137,14 @@ window.ExperienceList = (() => {
             element(
                 "span",
                 "experience-category",
-                fields.category_display
+                experience.category_display
             )
         );
 
         const heading = element("h2");
-        const detailLink = element("a", "", fields.title);
+        const detailLink = element("a", "", experience.title);
 
-        detailLink.href = route(page.dataset.detailUrl, item.pk);
+        detailLink.href = route(page.dataset.detailUrl, experience.id);
         heading.append(detailLink);
         article.append(heading);
 
@@ -175,7 +152,7 @@ window.ExperienceList = (() => {
             element(
                 "p",
                 "experience-description",
-                fields.description
+                experience.description
             )
         );
 
@@ -183,14 +160,14 @@ window.ExperienceList = (() => {
             element(
                 "p",
                 "experience-status",
-                fields.is_ongoing
+                experience.is_ongoing
                     ? "Sedang berlangsung"
                     : "Selesai"
             )
         );
 
         const actions = element("div", "portfolio-actions");
-        actions.append(buildStarControl(item));
+        actions.append(buildStarControl(experience));
 
         if (page.dataset.editUrl) {
             const edit = element(
@@ -199,33 +176,21 @@ window.ExperienceList = (() => {
                 "Edit"
             );
 
-            edit.href = route(page.dataset.editUrl, item.pk);
+            edit.href = route(page.dataset.editUrl, experience.id);
             actions.append(edit);
         }
 
         if (page.dataset.deleteUrl) {
-            const form = element("form");
-            form.method = "post";
-            form.action = route(page.dataset.deleteUrl, item.pk);
-
-            addCsrf(form);
-
             const button = element(
                 "button",
                 "button button-danger",
                 "Hapus"
             );
 
-            button.type = "submit";
-            form.append(button);
-
-            form.addEventListener("submit", (event) => {
-                if (!window.confirm("Hapus experience ini?")) {
-                    event.preventDefault();
-                }
-            });
-
-            actions.append(form);
+            button.type = "button";
+            button.dataset.action = "delete";
+            button.dataset.id = experience.id;
+            actions.append(button);
         }
 
         article.append(actions);
@@ -320,6 +285,42 @@ window.ExperienceList = (() => {
             }
         }
     }
+
+    grid.addEventListener("click", async (event) => {
+        const button = event.target.closest("button[data-action]");
+        if (!button || button.disabled) return;
+
+        const action = button.dataset.action;
+        if (!["star", "delete"].includes(action)) return;
+        if (action === "delete" && !window.confirm("Hapus experience ini?")) {
+            return;
+        }
+
+        button.disabled = true;
+        try {
+            const pattern = action === "star"
+                ? page.dataset.starUrl
+                : page.dataset.deleteUrl;
+            await window.ExperienceAPI.write(
+                route(pattern, button.dataset.id),
+                action === "star" ? "POST" : "DELETE",
+                undefined,
+                csrfSource?.value
+            );
+            window.showToast(
+                "Berhasil",
+                action === "star"
+                    ? "Status star diperbarui."
+                    : "Experience berhasil dihapus.",
+                "success"
+            );
+            await load();
+        } catch (error) {
+            window.showToast("Permintaan gagal", error.message, "error", 7000);
+        } finally {
+            button.disabled = false;
+        }
+    });
 
     if (retry) {
         retry.addEventListener("click", () => load());

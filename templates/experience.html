@@ -1,4 +1,3 @@
-cat > templates/experience.html <<'HTML'
 {% extends "base.html" %}
 {% load static %}
 
@@ -13,16 +12,16 @@ cat > templates/experience.html <<'HTML'
     <section
         class="experience-section"
         id="experience"
-        data-list-url="{% url 'main:get_experiences_json' %}"
+        data-list-url="{% url 'api:experience-list' %}"
         data-detail-url="{% url 'main:experience_detail' '00000000-0000-0000-0000-000000000000' %}"
-        data-star-url="{% url 'main:toggle_experience_star' '00000000-0000-0000-0000-000000000000' %}"
+        data-star-url="{% url 'api:experience-star' '00000000-0000-0000-0000-000000000000' %}"
         data-login-url="{% url 'main:login' %}"
         data-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"
         {% if user.is_superuser or is_editor %}
         data-edit-url="{% url 'main:update_experience' '00000000-0000-0000-0000-000000000000' %}"
         {% endif %}
         {% if user.is_superuser %}
-        data-delete-url="{% url 'main:delete_experience' '00000000-0000-0000-0000-000000000000' %}"
+        data-delete-url="{% url 'api:experience-detail' '00000000-0000-0000-0000-000000000000' %}"
         {% endif %}
     >
         <div class="container">
@@ -42,7 +41,7 @@ cat > templates/experience.html <<'HTML'
 
                 <a
                     class="button button-secondary"
-                    href="{% url 'main:get_experiences_json' %}"
+                    href="{% url 'api:experience-list' %}?format=json"
                 >
                     View JSON
                 </a>
@@ -136,8 +135,8 @@ cat > templates/experience.html <<'HTML'
 {% include "components/experience_form_modal.html" %}
 {% endif %}
 
+<script src="{% static 'js/experiences-api.js' %}" defer></script>
 <script src="{% static 'js/experiences.js' %}" defer></script>
 <script src="{% static 'js/experiences-search.js' %}" defer></script>
 <script src="{% static 'js/experiences-form.js' %}" defer></script>
 {% endblock content %}
-HTML

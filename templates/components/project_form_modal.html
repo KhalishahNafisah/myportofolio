@@ -13,7 +13,7 @@
             id="project-form"
             method="post"
             action="{% url 'main:create_project' %}"
-            data-ajax-url="{% url 'main:create_project_ajax' %}"
+            data-ajax-url="{% url 'api:project-list' %}"
         >
         {% csrf_token %}
 

@@ -3,14 +3,24 @@ const searchForm = document.getElementById("project-search-form");
 const searchInput = document.getElementById("search-input");
 const grid = document.getElementById("grid");
 
-const csrfInput = document.querySelector("#csrf-source input");
-const csrfHtml = csrfInput.outerHTML;
-
 const placeholderId = "00000000-0000-0000-0000-000000000000";
 
 let projectsAbortController;
 const SEARCH_DEBOUNCE_DELAY = 300;
 let searchDebounceTimer;
+
+function getCsrfToken() {
+    return document.querySelector(
+        "#csrf-source input[name='csrfmiddlewaretoken']"
+    )?.value ?? "";
+}
+
+function projectEndpoint(pattern, id) {
+    return pattern.replace(
+        placeholderId,
+        encodeURIComponent(String(id))
+    );
+}
 
 function escapeHtml(value) {
     return String(value ?? "")
@@ -42,15 +52,13 @@ function displayPageSection(section) {
     }
 }
 
-function buildProjectCardElement(item) {
-    const project = item.fields;
-
+function buildProjectCardElement(project) {
     const article = document.createElement("article");
     article.className = "experience-card";
 
     const route = (template) => {
         return escapeHtml(
-            template.replace(placeholderId, item.pk)
+            projectEndpoint(template, project.id)
         );
     };
 
@@ -88,23 +96,17 @@ function buildProjectCardElement(item) {
 
     const starHtml = projectsPage.dataset.authenticated === "true"
         ? `
-            <form
-                method="post"
-                action="${route(projectsPage.dataset.starUrl)}"
-                class="star-form"
+            <button
+                type="button"
+                class="button button-star${project.is_starred ? " is-starred" : ""}"
+                data-action="star"
+                data-id="${escapeHtml(project.id)}"
+                aria-pressed="${project.is_starred ? "true" : "false"}"
             >
-                ${csrfHtml}
+                ★ ${project.is_starred ? "Unstar" : "Star"}
 
-                <button
-                    type="submit"
-                    class="button button-star${project.is_starred ? " is-starred" : ""}"
-                    aria-pressed="${project.is_starred ? "true" : "false"}"
-                >
-                    ★ ${project.is_starred ? "Unstar" : "Star"}
-
-                    <span class="star-count">${count}</span>
-                </button>
-            </form>
+                <span class="star-count">${count}</span>
+            </button>
         `
         : `
             <a
@@ -129,20 +131,14 @@ function buildProjectCardElement(item) {
 
     const deleteHtml = projectsPage.dataset.deleteUrl
         ? `
-            <form
-                method="post"
-                action="${route(projectsPage.dataset.deleteUrl)}"
-                class="delete-project-form"
+            <button
+                type="button"
+                class="button button-danger"
+                data-action="delete"
+                data-id="${escapeHtml(project.id)}"
             >
-                ${csrfHtml}
-
-                <button
-                    type="submit"
-                    class="button button-danger"
-                >
-                    Hapus
-                </button>
-            </form>
+                Hapus
+            </button>
         `
         : "";
 
@@ -172,16 +168,6 @@ function buildProjectCardElement(item) {
         </div>
     `;
 
-    const deleteForm = article.querySelector(".delete-project-form");
-
-    if (deleteForm) {
-        deleteForm.addEventListener("submit", (event) => {
-            if (!confirm("Hapus proyek ini?")) {
-                event.preventDefault();
-            }
-        });
-    }
-
     return article;
 }
 
@@ -209,6 +195,7 @@ async function fetchProjects(query = "") {
             headers: {
                 Accept: "application/json",
             },
+            credentials: "same-origin",
             signal: controller.signal,
             cache: "no-store",
         });
@@ -221,6 +208,10 @@ async function fetchProjects(query = "") {
 
         if (controller.signal.aborted) return;
 
+        if (!Array.isArray(items)) {
+            throw new Error("Format daftar proyek tidak sesuai.");
+        }
+
         grid.replaceChildren(
             ...items.map(buildProjectCardElement)
         );
@@ -231,7 +222,7 @@ async function fetchProjects(query = "") {
 
         displayPageSection(items.length ? "grid" : "empty");
     } catch (error) {
-        if (error.name === "AbortError") return;
+        if (error.name === "AbortError" || controller.signal.aborted) return;
 
         console.error(error);
         displayPageSection("error");
@@ -281,6 +272,40 @@ function closeProjectModal() {
         .hidePopover();
 }
 
+function apiErrorMessage(data, status) {
+    const messages = Object.values(data ?? {})
+        .flat()
+        .filter((value) => typeof value === "string");
+
+    return messages.join(" ") ||
+        `Permintaan gagal (HTTP ${status}).`;
+}
+
+async function writeProject(url, method, payload) {
+    const response = await fetch(url, {
+        method,
+        credentials: "same-origin",
+        headers: {
+            Accept: "application/json",
+            "Content-Type": "application/json",
+            "X-CSRFToken": getCsrfToken(),
+        },
+        body: payload === undefined
+            ? undefined
+            : JSON.stringify(payload),
+    });
+
+    if (response.status === 204) return null;
+
+    const result = await response.json().catch(() => ({}));
+
+    if (!response.ok) {
+        throw new Error(apiErrorMessage(result, response.status));
+    }
+
+    return result;
+}
+
 async function addProject(event) {
     event.preventDefault();
 
@@ -293,46 +318,21 @@ async function addProject(event) {
     button.disabled = true;
 
     try {
-        const token = projectForm.querySelector(
-            '[name="csrfmiddlewaretoken"]'
-        ).value;
+        const fields = new FormData(projectForm);
+        const payload = Object.fromEntries([
+            "title",
+            "description",
+            "category",
+            "year",
+            "project_url",
+            "project_image_url",
+        ].map((name) => [name, fields.get(name)]));
 
-        const response = await fetch(
+        await writeProject(
             projectForm.dataset.ajaxUrl,
-            {
-                method: "POST",
-                headers: {
-                    "X-CSRFToken": token,
-                    Accept: "application/json",
-                },
-                body: new FormData(projectForm),
-                credentials: "same-origin",
-            }
+            "POST",
+            payload
         );
-
-        const result = await response
-            .json()
-            .catch(() => ({}));
-
-        if (!response.ok) {
-            const messages = result.errors
-                ? Object.values(result.errors)
-                    .flat()
-                    .map((error) => error.message)
-                : [
-                    result.message ||
-                    `Permintaan gagal (HTTP ${response.status}).`
-                ];
-
-            showToast(
-                "Gagal menyimpan",
-                messages.join(" "),
-                "error",
-                6000
-            );
-
-            return;
-        }
 
         projectForm.reset();
         closeProjectModal();
@@ -348,8 +348,8 @@ async function addProject(event) {
         console.error(error);
 
         showToast(
-            "Koneksi gagal",
-            "Periksa koneksi, lalu coba lagi.",
+            "Gagal menyimpan",
+            error.message,
             "error",
             6000
         );
@@ -361,5 +361,46 @@ async function addProject(event) {
 if (projectForm) {
     projectForm.addEventListener("submit", addProject);
 }
+
+grid.addEventListener("click", async (event) => {
+    const button = event.target.closest("button[data-action]");
+
+    if (!button || button.disabled) return;
+
+    const action = button.dataset.action;
+
+    if (!["star", "delete"].includes(action)) return;
+
+    if (action === "delete" && !window.confirm("Hapus proyek ini?")) {
+        return;
+    }
+
+    button.disabled = true;
+
+    try {
+        const pattern = action === "star"
+            ? projectsPage.dataset.starUrl
+            : projectsPage.dataset.deleteUrl;
+
+        await writeProject(
+            projectEndpoint(pattern, button.dataset.id),
+            action === "star" ? "POST" : "DELETE"
+        );
+
+        showToast(
+            "Berhasil",
+            action === "star"
+                ? "Status star diperbarui."
+                : "Proyek berhasil dihapus.",
+            "success"
+        );
+
+        await fetchProjects(searchInput.value.trim());
+    } catch (error) {
+        showToast("Permintaan gagal", error.message, "error", 6000);
+    } finally {
+        button.disabled = false;
+    }
+});
 
 fetchProjects(searchInput.value.trim());

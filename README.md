@@ -1,6 +1,6 @@
 # Portofolio Khalishah Nafisah
 
-Website portofolio untuk mata kuliah Pemrograman Berbasis Platform, menggunakan Django, HTML, CSS, dan JavaScript. Bagian dinamisnya mencakup Projects dan Experience, form pengelolaan data, API JSON publik, autentikasi, dan star per pengguna. Halaman Projects menggunakan Django REST Framework (DRF) melalui API `/api/v1/projects/`; halaman Experience masih menggunakan endpoint JSON dan AJAX dari tugas sebelumnya.
+Website portofolio untuk mata kuliah Pemrograman Berbasis Platform, menggunakan Django, HTML, CSS, dan JavaScript. Bagian dinamisnya mencakup Projects dan Experience, form pengelolaan data, API JSON publik, autentikasi, dan star per pengguna. API Django REST Framework (DRF) tersedia untuk Projects dan Experience. Halaman Projects menggunakan `/api/v1/projects/`; halaman Experience masih menggunakan endpoint JSON dan AJAX sebelumnya sampai tahap integrasi frontend berikutnya.
 
 ## Menjalankan proyek dari awal
 
@@ -32,6 +32,7 @@ Buka `http://127.0.0.1:8000/`. Jika port tersebut sedang dipakai, jalankan `pyth
 | JSON Experience | `/api/experiences/` |
 | JSON Projects sebelum DRF (tetap tersedia) | `/api/projects/` |
 | API Projects DRF / Browsable API | `/api/v1/projects/` |
+| API Experience DRF / Browsable API | `/api/v1/experiences/` |
 | Login Browsable API | `/api-auth/login/` |
 | Registrasi dan login | `/register/`, `/login/` |
 | Pengaturan pengguna dan grup | `/admin/` |
@@ -147,6 +148,31 @@ Saya menggunakan ChatGPT untuk memeriksa kondisi proyek, memahami implementasi, 
 Prompt diberikan secara bertahap, mulai dari meminta evaluasi proyek hingga panduan terperinci. AI tidak mengubah file atau menjalankan implementasi secara langsung. Penjelasan yang diberikan tetap perlu saya pahami dan verifikasi melalui pengujian backend serta browser.
 
 ## Tutorial 7: Implementasi Django REST Framework
+
+### API Experience
+
+Model Experience yang sudah ada digunakan kembali melalui `ExperienceSerializer`, API view, dan route bernamespace `api`, tanpa migrasi model baru.
+
+| Endpoint | Method dan izin |
+|---|---|
+| `/api/v1/experiences/` | GET publik dengan pencarian `?title=...`; POST hanya superuser |
+| `/api/v1/experiences/<uuid>/` | GET publik; PUT/PATCH untuk superuser atau grup Editor; DELETE hanya superuser |
+| `/api/v1/experiences/<uuid>/star/` | POST untuk semua akun login, memakai `request.user` |
+
+Flag `is_staff` saja tidak memberikan hak kelola. Field `id`, `started_at`, label kategori, dan hasil perhitungan tidak dapat diubah klien. `ended_at: null` menandakan pengalaman masih berlangsung; datetime yang valid menandakan selesai. String kosong bukan datetime API yang valid. Data akun pemberi star tidak ditampilkan.
+
+Pada checkpoint backend ini, frontend Experience tetap memakai endpoint lama `/api/experiences/` dan form HTML sebelumnya. Integrasi AJAX ke API DRF dilakukan pada tahap berikutnya.
+
+### Pengujian API
+
+```bash
+python manage.py test main.tests_api --verbosity 2
+python manage.py test main.tests_experience_api --verbosity 2
+python manage.py test main
+```
+
+Hasil lokal pada 4 November 2026: 13 test API Projects, 14 test API Experience, dan total 105 test app `main` lulus. Test Experience mencakup akses publik, pencarian, validasi, CRUD, izin Editor/staff, pencabutan grup Editor, field read-only, datetime, star per akun, dan session dengan/tanpa CSRF. Data uji dibuat dalam database pengujian terpisah. Django system check berhasil dan tidak ada perubahan model yang membutuhkan migrasi baru.
+
 ### Sumber dan disclosure bantuan AI
 
 - [Tutorial 07 PBP UI: Implementasi Django REST Framework](https://pbp.cs.ui.ac.id/tutorial/tutorial-7.html).
@@ -154,4 +180,6 @@ Prompt diberikan secara bertahap, mulai dari meminta evaluasi proyek hingga pand
 - [DRF: SessionAuthentication](https://www.django-rest-framework.org/api-guide/authentication/#sessionauthentication).
 - [DRF: pengujian API dan CSRF](https://www.django-rest-framework.org/api-guide/testing/).
 
-Saya menggunakan ChatGPT untuk memahami tutorial, membandingkan contoh dengan kondisi proyek, dan membantu cross check jika ada yang kurang tepat atau salah. Backend awal sampai akhir diterapkan berdasarkan pemahaman tersebut. 
+Saya menggunakan ChatGPT untuk memahami tutorial, membandingkan contoh dengan kondisi proyek, dan membantu cross check jika ada yang kurang tepat atau salah. Backend awal sampai akhir diterapkan berdasarkan pemahaman tersebut.
+
+Pada tahap lanjutan, saya meminta Codex menambahkan API Experience, permission Editor, dan pengujian otomatis; commit tetap saya lakukan sendiri.

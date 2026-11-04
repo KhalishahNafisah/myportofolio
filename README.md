@@ -1,21 +1,21 @@
 # Portofolio Khalishah Nafisah
 
-Website portofolio untuk mata kuliah Pemrograman Berbasis Platform, menggunakan Django, HTML, dan CSS. Bagian dinamisnya mencakup Projects dan Experience, form pengelolaan data, API JSON publik, autentikasi, dan star per pengguna.
+Website portofolio untuk mata kuliah Pemrograman Berbasis Platform, menggunakan Django, HTML, CSS, dan JavaScript. Bagian dinamisnya mencakup Projects dan Experience, form pengelolaan data, API JSON publik, autentikasi, dan star per pengguna. Halaman Projects menggunakan Django REST Framework (DRF) melalui API `/api/v1/projects/`; halaman Experience masih menggunakan endpoint JSON dan AJAX dari tugas sebelumnya.
 
 ## Menjalankan proyek dari awal
 
-Gunakan Python 3.12 untuk mengikuti environment pengujian Django 5.2. Environment lama `env/` pada komputer pengembangan masih menggunakan Python 3.9/Django 4.2; buat environment baru untuk mengikuti `requirements.txt`.
+Implementasi Tutorial 7 diverifikasi secara lokal dengan Python 3.14, Django 5.2.19, dan Django REST Framework 3.18.3. Gunakan environment `.venv/` dengan dependency dari `requirements.txt`. Environment lama `env/` pada komputer pengembangan masih menggunakan Python 3.9/Django 4.2.
 
 ```bash
 git clone https://github.com/KhalishahNafisah/myportofolio.git
 cd myportofolio
-python3.12 -m venv .venv
+python3.14 -m venv .venv
 source .venv/bin/activate
 python -m pip install -r requirements.txt
 python manage.py migrate
 python manage.py createsuperuser
 python manage.py check
-python manage.py test
+python manage.py test main
 python manage.py runserver
 ```
 
@@ -30,13 +30,17 @@ Buka `http://127.0.0.1:8000/`. Jika port tersebut sedang dipakai, jalankan `pyth
 | Detail Experience | `/experience/<uuid>/` |
 | Daftar dan pencarian Projects | `/projects/` |
 | JSON Experience | `/api/experiences/` |
-| JSON Projects | `/api/projects/` |
+| JSON Projects sebelum DRF (tetap tersedia) | `/api/projects/` |
+| API Projects DRF / Browsable API | `/api/v1/projects/` |
+| Login Browsable API | `/api-auth/login/` |
 | Registrasi dan login | `/register/`, `/login/` |
 | Pengaturan pengguna dan grup | `/admin/` |
 
 Database, password, dan akun lokal tidak ikut di-push. Pada instalasi atau deployment baru, jalankan migrasi dan atur akun/peran pada database lingkungan tersebut. Push GitHub menyimpan kode; penerapan ke hosting adalah langkah terpisah.
 
 ## Identitas dan progres mingguan
+
+Bagian tugas berikut mencatat implementasi pada minggu terkait. Perubahan terbaru pada API dan frontend Projects dijelaskan pada bagian Tutorial 7 di akhir README.
 
 Nama : Khalishah Nafisah
 
@@ -141,3 +145,13 @@ Ringkasan prompting dan evaluasi keterbatasan AI dicatat pada
 Saya menggunakan ChatGPT untuk memeriksa kondisi proyek, memahami implementasi, serta menghasilkan contoh kode. AI juga membantu menjelaskan debouncing, await, dan XSS serta menyusun jawaban reflektif.
 
 Prompt diberikan secara bertahap, mulai dari meminta evaluasi proyek hingga panduan terperinci. AI tidak mengubah file atau menjalankan implementasi secara langsung. Penjelasan yang diberikan tetap perlu saya pahami dan verifikasi melalui pengujian backend serta browser.
+
+## Tutorial 7: Implementasi Django REST Framework
+### Sumber dan disclosure bantuan AI
+
+- [Tutorial 07 PBP UI: Implementasi Django REST Framework](https://pbp.cs.ui.ac.id/tutorial/tutorial-7.html).
+- [Django 5.2: kompatibilitas versi Python](https://docs.djangoproject.com/en/5.2/faq/install/#what-python-version-can-i-use-with-django).
+- [DRF: SessionAuthentication](https://www.django-rest-framework.org/api-guide/authentication/#sessionauthentication).
+- [DRF: pengujian API dan CSRF](https://www.django-rest-framework.org/api-guide/testing/).
+
+Saya menggunakan ChatGPT untuk memahami tutorial, membandingkan contoh dengan kondisi proyek, dan membantu cross check jika ada yang kurang tepat atau salah. Backend awal sampai akhir diterapkan berdasarkan pemahaman tersebut. 

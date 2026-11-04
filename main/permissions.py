@@ -2,6 +2,7 @@ from functools import wraps
 
 from django.contrib.auth.decorators import login_required
 from django.core.exceptions import PermissionDenied
+from rest_framework.permissions import BasePermission, SAFE_METHODS
 
 
 def is_editor(user):
@@ -25,3 +26,15 @@ def portfolio_permission_required(*, allow_editor=False):
         return wrapped
 
     return decorator
+
+class IsPortfolioOwnerOrReadOnly(BasePermission):
+    message = (
+        "Hanya pemilik portofolio yang boleh "
+        "mengubah Projects melalui API."
+    )
+
+    def has_permission(self, request, view):
+        return (
+            request.method in SAFE_METHODS
+            or request.user.is_superuser
+        )

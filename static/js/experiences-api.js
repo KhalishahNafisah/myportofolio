@@ -14,9 +14,20 @@ window.ExperienceAPI = (() => {
     }
 
     function errorMessage(data, status) {
-        const messages = Object.values(data ?? {})
-            .flat()
-            .filter((value) => typeof value === "string");
+        const labels = {
+            title: "Judul pengalaman",
+            description: "Deskripsi",
+            category: "Kategori",
+            thumbnail: "URL gambar",
+            ended_at: "Tanggal selesai",
+        };
+        const messages = Object.entries(data ?? {}).flatMap(([field, errors]) => {
+            return [errors].flat()
+                .filter((value) => typeof value === "string")
+                .map((message) => labels[field]
+                    ? `${labels[field]}: ${message}`
+                    : message);
+        });
 
         return messages.join(" ") || `Permintaan gagal (HTTP ${status}).`;
     }

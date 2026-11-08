@@ -41,7 +41,7 @@ Database, password, dan akun lokal tidak ikut di-push. Pada instalasi atau deplo
 
 ## Identitas dan progres mingguan
 
-Bagian tugas berikut mencatat implementasi pada minggu terkait. Perubahan terbaru pada API dan frontend Projects dijelaskan pada bagian Tutorial 7 di akhir README.
+Bagian tugas berikut mencatat implementasi pada minggu terkait. Perubahan API dan frontend dijelaskan pada bagian Tutorial 7 dan Tugas 6 di akhir README.
 
 Nama : Khalishah Nafisah
 
@@ -67,7 +67,7 @@ Dosen : Pak Daya
 
 
 ### AI Disclosure
-Dalam pengerjaan Tugas 2, saya menggunakan ChatGPT sebagai alat bantu untuk memahami ketentuan tugas, menyusun urutan implementasi pola Model-View-Template, dan mengevaluasi rancangan unit test. Saya memberikan konteks berupa ketentuan tugas dan meminta bantuan AI untuk memberitahu apa saja yang perlu saya selesaikan. Saran AI digunakan sebagai referensi, kemudian saya menyesuaikan model Project, isi proyek, struktur template, navigasi, serta penjelasan reflektif dengan kebutuhan portofolio saya sendiri. Saya juga memverifikasi hasil implementasi dan pengujian halaman secara langsung melalui development server.
+Dalam pengerjaan Tugas 2, saya menggunakan AI sebagai alat bantu untuk memahami ketentuan tugas, menyusun urutan implementasi pola Model-View-Template, dan mengevaluasi rancangan unit test. Saya memberikan konteks berupa ketentuan tugas dan meminta bantuan AI untuk memberitahu apa saja yang perlu saya selesaikan. Saran AI digunakan sebagai referensi, kemudian saya menyesuaikan model Project, isi proyek, struktur template, navigasi, serta penjelasan reflektif dengan kebutuhan portofolio saya sendiri. Saya juga memverifikasi hasil implementasi dan pengujian halaman secara langsung melalui development server.
 
 
 
@@ -92,7 +92,7 @@ Untuk menampilkan Experience pada halaman web, fungsi `show_experience` memanggi
 
 
 ### AI DISCLOSURE TUGAS 3
-Saya menggunakan ChatGPT untuk memahami konsep, memperoleh panduan dan contoh kode, membantu debugging. Implementasi dan pengujian saya lakukan sendiri.
+Saya menggunakan AI untuk memahami konsep, memperoleh panduan dan contoh kode, membantu debugging. Implementasi dan pengujian saya lakukan sendiri.
 
 
 ### Tugas 4
@@ -123,7 +123,7 @@ Untuk pengujian manual, gunakan satu akun pemilik, satu anggota Editor, dan satu
 
 ### AI Disclosure Tugas 4
 
-Saya menggunakan ChatGPT (melalui Codex) untuk membantu pengerjaan Tugas 4.
+Saya menggunakan AI untuk membantu pengerjaan Tugas 4.
 Bantuan AI mencakup memberi pemahaman dan membantu implementasi perubahan kode untuk pembatasan
 hak akses Experience, peran Editor, fitur star/unstar, keamanan
 endpoint JSON, pengujian otomatis, dan dokumentasi.
@@ -131,7 +131,6 @@ endpoint JSON, pengujian otomatis, dan dokumentasi.
 Alur prompting dilakukan bertahap: pemeriksaan kebutuhan tugas
 dan kondisi proyek, penyusunan langkah pengerjaan untuk ditinjau,
 kemudian implementasi, pengujian, dan evaluasi hasil.
-Ringkasan prompting dan evaluasi keterbatasan AI dicatat pada
 
 
 
@@ -143,7 +142,7 @@ Ringkasan prompting dan evaluasi keterbatasan AI dicatat pada
 
 
 ### AI Disclosure Tugas 5
-Saya menggunakan ChatGPT untuk memeriksa kondisi proyek, memahami implementasi, serta menghasilkan contoh kode. AI juga membantu menjelaskan debouncing, await, dan XSS serta menyusun jawaban reflektif.
+Saya menggunakan AI untuk memeriksa kondisi proyek, memahami implementasi, serta menghasilkan contoh kode. AI juga membantu menjelaskan debouncing, await, dan XSS serta menyusun jawaban reflektif.
 
 Prompt diberikan secara bertahap, mulai dari meminta evaluasi proyek hingga panduan terperinci. AI tidak mengubah file atau menjalankan implementasi secara langsung. Penjelasan yang diberikan tetap perlu saya pahami dan verifikasi melalui pengujian backend serta browser.
 
@@ -177,13 +176,16 @@ Hasil lokal pada 4 November 2026: 13 test API Projects, 16 test Experience (14 A
 
 Pengujian browser dengan database sementara memverifikasi pencarian, hasil kosong, create 201, validasi 400 beserta toast, PATCH 200 oleh Editor, star/unstar 200 oleh akun biasa, dan delete 204 oleh pemilik. Tanggal UTC tersimpan tanpa bergeser; mengosongkan tanggal selesai mengubah status menjadi sedang berlangsung. Pemeriksaan JavaScript juga mencakup payload JSON, header session/CSRF, respons 204, dan pesan error API.
 
-### Sumber dan disclosure bantuan AI
+Saya menggunakan AI untuk memahami, membandingkan contoh dengan kondisi proyek, dan membantu cross check jika ada yang kurang tepat atau salah. Backend awal sampai akhir diterapkan berdasarkan pemahaman tersebut.
 
-- [Tutorial 07 PBP UI: Implementasi Django REST Framework](https://pbp.cs.ui.ac.id/tutorial/tutorial-7.html).
-- [Django 5.2: kompatibilitas versi Python](https://docs.djangoproject.com/en/5.2/faq/install/#what-python-version-can-i-use-with-django).
-- [DRF: SessionAuthentication](https://www.django-rest-framework.org/api-guide/authentication/#sessionauthentication).
-- [DRF: pengujian API dan CSRF](https://www.django-rest-framework.org/api-guide/testing/).
+### Tugas 6
 
-Saya menggunakan ChatGPT untuk memahami tutorial, membandingkan contoh dengan kondisi proyek, dan membantu cross check jika ada yang kurang tepat atau salah. Backend awal sampai akhir diterapkan berdasarkan pemahaman tersebut.
+1. **REST, JSON, PUT, dan PATCH.** REST (Representational State Transfer) adalah gaya arsitektur yang mengatur interaksi client dan server melalui representasi resource. Prinsipnya mencakup pemisahan client-server, komunikasi stateless, aturan cache, uniform interface, dan sistem berlapis. JSON hanya format representasi data, sehingga mengembalikan JSON belum membuktikan bahwa rancangan API mengikuti prinsip REST. Penggunaan URI resource, makna metode HTTP, dan status respons juga harus sesuai. Pada proyek ini, `/api/v1/experiences/` merepresentasikan koleksi Experience dan `/api/v1/experiences/<uuid>/` merepresentasikan satu Experience. Proyek tetap menggunakan session Django sesuai instruksi tugas; adanya session server berarti implementasi ini tidak memenuhi batasan stateless REST secara ketat. [Sumber REST](https://ics.uci.edu/~fielding/pubs/dissertation/rest_arch_style.htm).
 
-Pada tahap lanjutan, saya meminta Codex menambahkan API Experience, permission Editor, integrasi AJAX pada daftar dan form, serta pengujian otomatis dan browser; commit tetap saya lakukan sendiri.
+   PUT digunakan untuk mengganti representasi resource dengan data lengkap, sedangkan PATCH mengubah sebagian data. Contoh PUT pada detail Experience mengirim `{"title":"Research Assistant","description":"Riset UI","category":"research","thumbnail":"","ended_at":null}` ketika seluruh isinya diperbarui. Jika hanya judul yang berubah, PATCH cukup mengirim `{"title":"Research Assistant"}`. Implementasi serializer memakai `partial=True` hanya untuk PATCH, sehingga field yang tidak dikirim tetap tersimpan, sedangkan PUT tetap mewajibkan seluruh field wajib. Field read-only seperti `id` dan `started_at` tidak perlu dikirim. 
+
+2. **Peran serializer.** Serializer mengubah instance model atau QuerySet menjadi tipe data Python yang dapat dirender sebagai JSON, serta memvalidasi dan mengubah input menjadi `validated_data`. Setelah validasi, `ModelSerializer.save()` dapat membuat atau memperbarui instance. Dibandingkan merakit dictionary dengan `JsonResponse`, serializer menyatukan aturan field, tipe data, validasi, dan penyimpanan sehingga tidak perlu menulis aturan yang sama pada setiap view. `JsonResponse` sendiri tidak otomatis memvalidasi input atau menyimpan model. Pada `ExperienceSerializer`, daftar `fields` ditulis eksplisit, `validate_title` dan `validate_description` membersihkan teks menggunakan `strip_tags`, sedangkan `star_count` dan `is_starred` bersifat read-only. Dengan demikian, data akun pemberi star tidak ikut terekspos dan klien tidak dapat menetapkan hasil perhitungan sendiri.
+
+3. **Autentikasi dan otorisasi.** Autentikasi menentukan identitas pengguna; `SessionAuthentication` menggunakan session Django untuk mengisi `request.user`. Otorisasi menentukan tindakan yang boleh dilakukan oleh identitas tersebut. Pada API Experience, `IsPortfolioOwnerOrEditorOrReadOnly` mengizinkan semua peran membaca data, hanya superuser membuat/menghapus data, serta superuser dan anggota grup `Editor` memperbarui data. Endpoint star memakai `IsAuthenticated`, dan akun pemberi star selalu berasal dari `request.user`. Tombol yang disembunyikan hanya mengatur tampilan karena seseorang tetap dapat mengirim request langsung dari alat HTTP. Permission class harus memeriksa hak akses di server sebelum data diubah; pengguna dengan token CSRF valid pun tetap ditolak jika tidak memiliki izin. 
+
+4. **SessionAuthentication dan CSRF.** Browser dapat menyertakan cookie session pada request yang dipicu dari situs lain. Karena itu, status login saja tidak membuktikan bahwa pengguna bermaksud melakukan perubahan tersebut. Pada request pengguna yang diautentikasi melalui session, DRF memerlukan token CSRF yang valid untuk POST, PUT, PATCH, dan DELETE. Frontend mengirim `X-CSRFToken` dan `credentials: "same-origin"`; JSON tidak membuat perlindungan CSRF menjadi tidak diperlukan. `force_authenticate` memasang identitas secara langsung dan melewati proses autentikasi normal, sehingga tidak cukup untuk membuktikan pemeriksaan CSRF. Tes menggunakan `APIClient(enforce_csrf_checks=True)` dan `.login()`, lalu memastikan request tanpa token mendapat 403 dan database tidak berubah. Request dengan token valid juga diuji: operasi yang diizinkan berhasil, sedangkan operasi di luar hak peran tetap mendapat 403.

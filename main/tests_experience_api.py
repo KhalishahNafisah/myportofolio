@@ -40,6 +40,13 @@ class ExperienceAPITest(APITestCase):
             "ended_at": None,
         }
 
+    def experience_state(self):
+        """Snapshot every saved field and star relation to detect partial writes."""
+        return (
+            list(Experience.objects.order_by("pk").values()),
+            list(Experience.starred_by.through.objects.order_by("pk").values()),
+        )
+
     def test_public_list_and_detail(self):
         self.experience.starred_by.add(self.visitor)
 
@@ -154,6 +161,8 @@ class ExperienceAPITest(APITestCase):
         self.assertEqual(Experience.objects.count(), 1)
 
     def test_guest_and_reader_cannot_manage_experience(self):
+        self.experience.starred_by.add(self.owner)
+        before = self.experience_state()
         for user in (None, self.visitor):
             self.client.force_authenticate(user=user)
             for method, url, payload in (
@@ -165,11 +174,7 @@ class ExperienceAPITest(APITestCase):
                 with self.subTest(user=user, method=method):
                     response = getattr(self.client, method)(url, payload, format="json")
                     self.assertEqual(response.status_code, 403)
-
-        self.assertEqual(Experience.objects.count(), 1)
-        self.experience.refresh_from_db()
-        self.assertEqual(self.experience.title, "Research Assistant")
-        self.assertEqual(self.experience.description, "Original research work")
+                    self.assertEqual(self.experience_state(), before)
 
     def test_owner_can_create(self):
         self.client.force_authenticate(user=self.owner)
@@ -216,6 +221,29 @@ class ExperienceAPITest(APITestCase):
                 self.assertEqual(response.status_code, 400)
                 self.assertIn(field, response.data)
                 self.assertEqual(Experience.objects.count(), 1)
+
+    def test_invalid_updates_preserve_data_and_stars(self):
+        self.experience.starred_by.add(self.visitor)
+        before = self.experience_state()
+        for user in (self.owner, self.editor):
+            self.client.force_authenticate(user=user)
+            for method in ("put", "patch"):
+                for changes, field in (
+                    ({"title": "<br>"}, "title"),
+                    ({"description": "<p> </p>"}, "description"),
+                    ({"category": "invalid-category"}, "category"),
+                    ({"thumbnail": "javascript:alert(1)"}, "thumbnail"),
+                    ({"ended_at": "not-a-date"}, "ended_at"),
+                ):
+                    with self.subTest(user=user, method=method, field=field):
+                        response = getattr(self.client, method)(
+                            self.detail_url,
+                            {**self.payload, **changes},
+                            format="json",
+                        )
+                        self.assertEqual(response.status_code, 400)
+                        self.assertIn(field, response.data)
+                        self.assertEqual(self.experience_state(), before)
 
     def test_patch_put_and_delete(self):
         self.experience.starred_by.add(self.visitor)
@@ -287,24 +315,26 @@ class ExperienceAPITest(APITestCase):
         self.assertEqual(self.experience.description, "Helping with research")
         self.assertTrue(self.experience.starred_by.filter(pk=self.visitor.pk).exists())
 
+        before = self.experience_state()
         self.assertEqual(
             self.client.post(self.list_url, self.payload, format="json").status_code,
             403,
         )
+        self.assertEqual(self.experience_state(), before)
         self.assertEqual(self.client.delete(self.detail_url).status_code, 403)
-        self.assertEqual(Experience.objects.count(), 1)
+        self.assertEqual(self.experience_state(), before)
 
         self.editor.groups.clear()
         response = self.client.patch(
             self.detail_url, {"title": "Access revoked"}, format="json",
         )
         self.assertEqual(response.status_code, 403)
-        self.experience.refresh_from_db()
-        self.assertEqual(self.experience.title, "New experience")
+        self.assertEqual(self.experience_state(), before)
 
     def test_staff_flag_alone_does_not_grant_write_access(self):
         self.visitor.is_staff = True
         self.visitor.save()
+        before = self.experience_state()
         self.client.force_authenticate(user=self.visitor)
         for method, url, payload in (
             ("post", self.list_url, self.payload),
@@ -315,9 +345,7 @@ class ExperienceAPITest(APITestCase):
             with self.subTest(method=method):
                 response = getattr(self.client, method)(url, payload, format="json")
                 self.assertEqual(response.status_code, 403)
-        self.assertEqual(Experience.objects.count(), 1)
-        self.experience.refresh_from_db()
-        self.assertEqual(self.experience.title, "Research Assistant")
+                self.assertEqual(self.experience_state(), before)
 
     def test_computed_fields_and_start_time_are_read_only(self):
         self.client.force_authenticate(user=self.owner)
@@ -383,6 +411,27 @@ class ExperienceAPITest(APITestCase):
         self.assertFalse(self.experience.starred_by.filter(pk=self.visitor.pk).exists())
         self.assertTrue(self.experience.starred_by.filter(pk=self.owner.pk).exists())
 
+    def test_all_authenticated_roles_can_toggle_star(self):
+        for user in (self.visitor, self.editor, self.owner):
+            with self.subTest(user=user):
+                self.client.force_authenticate(user=user)
+                before = self.experience_state()
+
+                response = self.client.post(self.star_url)
+                self.assertEqual(response.status_code, 200)
+                self.assertTrue(response.data["is_starred"])
+                self.assertEqual(response.data["star_count"], 1)
+                self.assertEqual(
+                    list(self.experience.starred_by.values_list("pk", flat=True)),
+                    [user.pk],
+                )
+
+                response = self.client.post(self.star_url)
+                self.assertEqual(response.status_code, 200)
+                self.assertFalse(response.data["is_starred"])
+                self.assertEqual(response.data["star_count"], 0)
+                self.assertEqual(self.experience_state(), before)
+
     def test_wrong_method(self):
         self.client.force_authenticate(user=self.owner)
         for method, url in (
@@ -397,8 +446,14 @@ class ExperienceAPITest(APITestCase):
         self.assertEqual(self.experience.starred_by.count(), 0)
 
     def test_session_write_without_csrf_is_rejected(self):
+        self.experience.starred_by.add(self.editor)
+        before = self.experience_state()
         for user, method, url, payload in (
             (self.owner, "post", self.list_url, self.payload),
+            (self.owner, "put", self.detail_url, self.payload),
+            (self.owner, "patch", self.detail_url, {"title": "Changed"}),
+            (self.owner, "delete", self.detail_url, None),
+            (self.editor, "put", self.detail_url, self.payload),
             (self.editor, "patch", self.detail_url, {"title": "Edited"}),
             (self.visitor, "post", self.star_url, {}),
         ):
@@ -408,10 +463,36 @@ class ExperienceAPITest(APITestCase):
                 response = getattr(client, method)(url, payload, format="json")
                 self.assertEqual(response.status_code, 403)
                 self.assertIn("CSRF", str(response.data["detail"]))
-        self.assertEqual(Experience.objects.count(), 1)
-        self.experience.refresh_from_db()
-        self.assertEqual(self.experience.title, "Research Assistant")
-        self.assertEqual(self.experience.starred_by.count(), 0)
+                self.assertEqual(self.experience_state(), before)
+
+    def test_valid_csrf_does_not_bypass_role_permissions(self):
+        self.experience.starred_by.add(self.owner)
+        before = self.experience_state()
+        for user in (self.visitor, self.editor):
+            client = APIClient(enforce_csrf_checks=True)
+            self.assertTrue(client.login(username=user.username, password=self.password))
+            page = client.get(reverse("main:show_experience"))
+            self.assertEqual(page.status_code, 200)
+            token = client.cookies["csrftoken"].value
+
+            requests = [
+                ("post", self.list_url, self.payload),
+                ("delete", self.detail_url, None),
+            ]
+            if user == self.visitor:
+                requests.extend([
+                    ("put", self.detail_url, self.payload),
+                    ("patch", self.detail_url, {"title": "Changed"}),
+                ])
+
+            for method, url, payload in requests:
+                with self.subTest(user=user, method=method):
+                    response = getattr(client, method)(
+                        url, payload, format="json", HTTP_X_CSRFTOKEN=token,
+                    )
+                    self.assertEqual(response.status_code, 403)
+                    self.assertNotIn("CSRF", str(response.data["detail"]))
+                    self.assertEqual(self.experience_state(), before)
 
     def test_session_write_with_csrf_succeeds(self):
         for user, method, url, payload, expected_status in (

@@ -133,6 +133,7 @@
 
 {% if user.is_superuser %}
 {% include "components/experience_form_modal.html" %}
+{% include "components/experience_delete_dialog.html" %}
 {% endif %}
 
 <script src="{% static 'js/experiences-api.js' %}" defer></script>

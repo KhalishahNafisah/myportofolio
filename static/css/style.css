@@ -952,6 +952,24 @@ button.button {
     margin-bottom: 12px;
 }
 
+.delete-popover p {
+    overflow-wrap: anywhere;
+}
+
+.delete-popover .portfolio-actions {
+    margin-bottom: 0;
+}
+
+.delete-popover .delete-error {
+    color: #b42318;
+    margin-top: 16px;
+}
+
+.delete-popover button:disabled {
+    opacity: 0.6;
+    cursor: wait;
+}
+
 .star-form {
     display: inline;
 }

@@ -1,0 +1,33 @@
+<dialog
+    id="delete-experience-dialog"
+    class="delete-popover"
+    aria-labelledby="delete-experience-heading"
+    aria-describedby="delete-experience-description"
+>
+    <h2 id="delete-experience-heading">Hapus experience?</h2>
+
+    <p id="delete-experience-description">
+        Kamu akan menghapus <strong id="delete-experience-title"></strong>.
+        Data yang sudah dihapus tidak dapat dikembalikan.
+    </p>
+
+    <p id="delete-experience-error" class="delete-error" role="alert" hidden></p>
+
+    <form method="dialog" class="portfolio-actions">
+        <button
+            type="submit"
+            id="cancel-delete-experience"
+            class="button button-secondary"
+            autofocus
+        >
+            Batal
+        </button>
+        <button
+            type="button"
+            id="confirm-delete-experience"
+            class="button button-danger"
+        >
+            Ya, hapus
+        </button>
+    </form>
+</dialog>

@@ -11,10 +11,17 @@ window.ExperienceList = (() => {
     const csrfSource = document.querySelector(
         "#experience-csrf-source input[name='csrfmiddlewaretoken']"
     );
+    const deleteDialog = document.getElementById("delete-experience-dialog");
+    const deleteTitle = document.getElementById("delete-experience-title");
+    const deleteError = document.getElementById("delete-experience-error");
+    const confirmDelete = document.getElementById("confirm-delete-experience");
+    const cancelDelete = document.getElementById("cancel-delete-experience");
 
     const placeholderId = "00000000-0000-0000-0000-000000000000";
 
     let activeController = null;
+    let pendingDelete = null;
+    let deleting = false;
 
     function element(tag, className = "", text = null) {
         const node = document.createElement(tag);
@@ -190,6 +197,8 @@ window.ExperienceList = (() => {
             button.type = "button";
             button.dataset.action = "delete";
             button.dataset.id = experience.id;
+            button.setAttribute("aria-haspopup", "dialog");
+            button.setAttribute("aria-controls", "delete-experience-dialog");
             actions.append(button);
         }
 
@@ -292,26 +301,27 @@ window.ExperienceList = (() => {
 
         const action = button.dataset.action;
         if (!["star", "delete"].includes(action)) return;
-        if (action === "delete" && !window.confirm("Hapus experience ini?")) {
+
+        if (action === "delete") {
+            if (!deleteDialog || deleting) return;
+            pendingDelete = button;
+            deleteTitle.textContent = button.closest("article").querySelector("h2").textContent;
+            deleteError.hidden = true;
+            deleteDialog.showModal();
             return;
         }
 
         button.disabled = true;
         try {
-            const pattern = action === "star"
-                ? page.dataset.starUrl
-                : page.dataset.deleteUrl;
             await window.ExperienceAPI.write(
-                route(pattern, button.dataset.id),
-                action === "star" ? "POST" : "DELETE",
+                route(page.dataset.starUrl, button.dataset.id),
+                "POST",
                 undefined,
                 csrfSource?.value
             );
             window.showToast(
                 "Berhasil",
-                action === "star"
-                    ? "Status star diperbarui."
-                    : "Experience berhasil dihapus.",
+                "Status star diperbarui.",
                 "success"
             );
             await load();
@@ -319,6 +329,55 @@ window.ExperienceList = (() => {
             window.showToast("Permintaan gagal", error.message, "error", 7000);
         } finally {
             button.disabled = false;
+        }
+    });
+
+    deleteDialog?.addEventListener("cancel", (event) => {
+        if (deleting) event.preventDefault();
+    });
+
+    deleteDialog?.addEventListener("close", () => {
+        pendingDelete = null;
+        deleteError.textContent = "";
+        deleteError.hidden = true;
+    });
+
+    confirmDelete?.addEventListener("click", async () => {
+        if (!pendingDelete || deleting) return;
+
+        const button = pendingDelete;
+        deleting = true;
+        button.disabled = true;
+        confirmDelete.disabled = true;
+        cancelDelete.disabled = true;
+        confirmDelete.textContent = "Menghapus...";
+        deleteDialog.setAttribute("aria-busy", "true");
+        deleteError.hidden = true;
+
+        try {
+            await window.ExperienceAPI.write(
+                route(page.dataset.deleteUrl, button.dataset.id),
+                "DELETE",
+                undefined,
+                csrfSource?.value
+            );
+            deleteDialog.close();
+            window.showToast("Berhasil", "Experience berhasil dihapus.", "success");
+            await load();
+            document.getElementById("experience-search")?.focus();
+        } catch (error) {
+            deleteError.textContent = error instanceof TypeError
+                ? "Koneksi terputus. Periksa daftar sebelum mencoba menghapus kembali."
+                : error.message;
+            deleteError.hidden = false;
+            window.showToast("Gagal menghapus", deleteError.textContent, "error", 7000);
+        } finally {
+            deleting = false;
+            button.disabled = false;
+            confirmDelete.disabled = false;
+            cancelDelete.disabled = false;
+            confirmDelete.textContent = "Ya, hapus";
+            deleteDialog.removeAttribute("aria-busy");
         }
     });
 

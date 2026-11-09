@@ -40,8 +40,10 @@
         input.focus();
     });
 
-    document.addEventListener("experience:created", () => {
-        clearPendingSearch();
-        list.load(input.value.trim());
-    });
+    for (const event of ["experience:created", "experience:updated"]) {
+        document.addEventListener(event, () => {
+            clearPendingSearch();
+            list.load(input.value.trim());
+        });
+    }
 })();

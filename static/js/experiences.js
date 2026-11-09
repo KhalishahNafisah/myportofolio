@@ -184,6 +184,10 @@ window.ExperienceList = (() => {
             );
 
             edit.href = route(page.dataset.editUrl, experience.id);
+            edit.dataset.action = "edit";
+            edit.dataset.id = experience.id;
+            edit.setAttribute("aria-haspopup", "dialog");
+            edit.setAttribute("aria-controls", "edit-experience-dialog");
             actions.append(edit);
         }
 

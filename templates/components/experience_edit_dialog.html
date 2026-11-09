@@ -1,0 +1,35 @@
+<dialog
+    id="edit-experience-dialog"
+    class="project-form-modal experience-edit-dialog"
+    aria-labelledby="edit-experience-heading"
+>
+    <div class="experience-dialog-header">
+        <h2 id="edit-experience-heading">Edit experience</h2>
+        <button type="button" class="dialog-close" data-close-edit aria-label="Tutup form edit">×</button>
+    </div>
+
+    <p id="edit-experience-loading" role="status">Memuat experience...</p>
+    <p id="edit-experience-error" class="experience-form-error" role="alert" hidden></p>
+
+    <form id="experience-edit-form" method="post" novalidate hidden>
+        {% csrf_token %}
+        <fieldset class="experience-edit-fields">
+            {% for field in edit_form %}
+            <div class="portfolio-field">
+                {{ field.label_tag }}
+                {{ field }}
+                {% if field.help_text %}
+                <small>{{ field.help_text }}</small>
+                {% endif %}
+            </div>
+            {% endfor %}
+        </fieldset>
+
+        <div class="portfolio-actions experience-dialog-actions">
+            <button type="button" class="button button-secondary" data-close-edit>Batal</button>
+            <button type="submit" class="button">Simpan perubahan</button>
+        </div>
+    </form>
+
+    <button type="button" id="edit-experience-retry" class="button" hidden>Coba lagi</button>
+</dialog>

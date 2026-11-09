@@ -19,6 +19,7 @@
         data-authenticated="{{ user.is_authenticated|yesno:'true,false' }}"
         {% if user.is_superuser or is_editor %}
         data-edit-url="{% url 'main:update_experience' '00000000-0000-0000-0000-000000000000' %}"
+        data-edit-api-url="{% url 'api:experience-detail' '00000000-0000-0000-0000-000000000000' %}"
         {% endif %}
         {% if user.is_superuser %}
         data-delete-url="{% url 'api:experience-detail' '00000000-0000-0000-0000-000000000000' %}"
@@ -131,6 +132,10 @@
     </section>
 </main>
 
+{% if user.is_superuser or is_editor %}
+{% include "components/experience_edit_dialog.html" %}
+{% endif %}
+
 {% if user.is_superuser %}
 {% include "components/experience_form_modal.html" %}
 {% include "components/experience_delete_dialog.html" %}
@@ -140,4 +145,5 @@
 <script src="{% static 'js/experiences.js' %}" defer></script>
 <script src="{% static 'js/experiences-search.js' %}" defer></script>
 <script src="{% static 'js/experiences-form.js' %}" defer></script>
+<script src="{% static 'js/experiences-edit.js' %}" defer></script>
 {% endblock content %}

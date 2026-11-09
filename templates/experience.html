@@ -69,6 +69,25 @@
                     >
                 </label>
 
+                <label class="experience-filter-field" for="experience-category">
+                    <span>Kategori</span>
+                    <select id="experience-category" name="category">
+                        <option value="">Semua kategori</option>
+                        {% for value, label in category_choices %}
+                        <option value="{{ value }}"{% if category_query == value %} selected{% endif %}>{{ label }}</option>
+                        {% endfor %}
+                    </select>
+                </label>
+
+                <label class="experience-filter-field" for="experience-status">
+                    <span>Status</span>
+                    <select id="experience-status" name="status">
+                        <option value="">Semua status</option>
+                        <option value="ongoing"{% if status_query == 'ongoing' %} selected{% endif %}>Sedang berlangsung</option>
+                        <option value="completed"{% if status_query == 'completed' %} selected{% endif %}>Selesai</option>
+                    </select>
+                </label>
+
                 <button type="submit" class="button">
                     Cari
                 </button>
@@ -85,6 +104,14 @@
             <div id="experience-csrf-source" hidden>
                 {% csrf_token %}
             </div>
+
+            <p
+                id="experience-results"
+                class="experience-results hide"
+                role="status"
+                aria-live="polite"
+                aria-atomic="true"
+            ></p>
 
             <div
                 id="experience-loading"

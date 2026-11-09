@@ -8,6 +8,7 @@ window.ExperienceList = (() => {
     const grid = document.getElementById("experience-grid");
     const empty = document.getElementById("experience-empty");
     const retry = document.getElementById("experience-retry");
+    const results = document.getElementById("experience-results");
     const csrfSource = document.querySelector(
         "#experience-csrf-source input[name='csrfmiddlewaretoken']"
     );
@@ -59,6 +60,7 @@ window.ExperienceList = (() => {
     }
 
     function showSection(name) {
+        results?.classList.toggle("hide", name === "loading" || name === "error");
         for (const section of ["loading", "error", "empty", "grid"]) {
             document
                 .getElementById(`experience-${section}`)
@@ -226,6 +228,17 @@ window.ExperienceList = (() => {
                 ? input?.value ?? ""
                 : query
         ).trim();
+        const category = document.getElementById("experience-category")?.value ?? "";
+        const status = document.getElementById("experience-status")?.value ?? "";
+
+        const pageUrl = new URL(location.href);
+        for (const [key, value] of Object.entries({ title: searchQuery, category, status })) {
+            if (value) pageUrl.searchParams.set(key, value);
+            else pageUrl.searchParams.delete(key);
+        }
+        if (pageUrl.href !== location.href) {
+            history.replaceState(null, "", pageUrl);
+        }
 
         cancel();
 
@@ -240,8 +253,8 @@ window.ExperienceList = (() => {
                 location.origin
             );
 
-            if (searchQuery) {
-                url.searchParams.set("title", searchQuery);
+            for (const [key, value] of Object.entries({ title: searchQuery, category, status })) {
+                if (value) url.searchParams.set(key, value);
             }
 
             const response = await fetch(url, {
@@ -267,9 +280,10 @@ window.ExperienceList = (() => {
 
             const cards = items.map(buildCard);
             grid.replaceChildren(...cards);
+            if (results) results.textContent = `Menampilkan ${items.length} pengalaman`;
 
-            empty.textContent = searchQuery
-                ? "Tidak ada pengalaman yang cocok dengan pencarian."
+            empty.textContent = searchQuery || category || status
+                ? "Tidak ada pengalaman yang cocok dengan pencarian atau filter ini."
                 : "Belum ada pengalaman yang ditambahkan.";
 
             showSection(items.length ? "grid" : "empty");

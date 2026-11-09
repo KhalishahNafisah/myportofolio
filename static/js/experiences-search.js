@@ -5,6 +5,10 @@
     const form = document.getElementById("experience-search-form");
     const input = document.getElementById("experience-search");
     const reset = document.getElementById("experience-search-reset");
+    const filters = [
+        document.getElementById("experience-category"),
+        document.getElementById("experience-status"),
+    ].filter(Boolean);
 
     if (!list || !form || !input || !reset) return;
 
@@ -33,9 +37,12 @@
         search();
     });
 
+    filters.forEach((filter) => filter.addEventListener("change", search));
+
     reset.addEventListener("click", () => {
         clearPendingSearch();
         input.value = "";
+        filters.forEach((filter) => { filter.value = ""; });
         list.load("");
         input.focus();
     });

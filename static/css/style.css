@@ -838,7 +838,8 @@ a.social-icon:active {
 .portfolio-field input,
 .portfolio-field textarea,
 .portfolio-field select,
-.project-search input {
+.project-search input,
+.experience-filter-field select {
     width: 100%;
     padding: 12px 14px;
     border: 1px solid var(--line);
@@ -855,7 +856,8 @@ a.social-icon:active {
 .portfolio-field input:focus,
 .portfolio-field textarea:focus,
 .portfolio-field select:focus,
-.project-search input:focus {
+.project-search input:focus,
+.experience-filter-field select:focus {
     outline: 2px solid var(--burgundy);
     outline-offset: 2px;
 }
@@ -906,10 +908,22 @@ button.button {
     flex: 1 1 240px;
 }
 
-.project-search-field span {
+.project-search-field span,
+.experience-filter-field span {
     display: block;
     margin-bottom: 6px;
     font-size: 12px;
+}
+
+.experience-filter-field {
+    flex: 1 1 160px;
+    min-width: 0;
+}
+
+.experience-results {
+    margin-bottom: 16px;
+    color: var(--muted);
+    font-size: 13px;
 }
 
 .portfolio-project-image {

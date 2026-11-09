@@ -68,6 +68,9 @@ def show_experience(request):
         "name": "Khalishah",
         "is_editor": is_editor(request.user),
         "title_query": request.GET.get("title", "").strip(),
+        "category_query": request.GET.get("category", ""),
+        "status_query": request.GET.get("status", ""),
+        "category_choices": Experience.EXPERIENCE_CHOICES,
         "form": ExperienceForm(),
         "edit_form": ExperienceForm(auto_id="edit_%s"),
     })

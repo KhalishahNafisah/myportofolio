@@ -15,7 +15,11 @@ from main.permissions import (
     IsPortfolioOwnerOrEditorOrReadOnly,
     IsPortfolioOwnerOrReadOnly,
 )
-from main.serializers import ExperienceSerializer, ProjectSerializer
+from main.serializers import (
+    ExperienceFilterSerializer,
+    ExperienceSerializer,
+    ProjectSerializer,
+)
 
 
 @api_view(["GET", "HEAD", "POST"])
@@ -118,14 +122,22 @@ def project_star(request, project_id):
 @permission_classes([IsPortfolioOwnerOrEditorOrReadOnly])
 def experience_list(request):
     if request.method in ("GET", "HEAD"):
+        filters = ExperienceFilterSerializer(data=request.query_params)
+        filters.is_valid(raise_exception=True)
         experiences = (
             Experience.objects
             .prefetch_related("starred_by")
             .order_by("-started_at", "title", "id")
         )
-        title = request.query_params.get("title", "").strip()
+        title = filters.validated_data.get("title", "")
         if title:
             experiences = experiences.filter(title__icontains=title)
+        category = filters.validated_data.get("category", "")
+        if category:
+            experiences = experiences.filter(category=category)
+        experience_status = filters.validated_data.get("status", "")
+        if experience_status:
+            experiences = experiences.filter(ended_at__isnull=experience_status == "ongoing")
         serializer = ExperienceSerializer(
             experiences, many=True, context={"request": request},
         )

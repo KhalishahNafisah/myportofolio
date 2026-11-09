@@ -4,6 +4,18 @@ from rest_framework import serializers
 from main.models import Experience, Project
 
 
+class ExperienceFilterSerializer(serializers.Serializer):
+    title = serializers.CharField(required=False, allow_blank=True)
+    category = serializers.ChoiceField(
+        choices=Experience.EXPERIENCE_CHOICES, required=False, allow_blank=True,
+    )
+    status = serializers.ChoiceField(
+        choices=[("ongoing", "Sedang berlangsung"), ("completed", "Selesai")],
+        required=False,
+        allow_blank=True,
+    )
+
+
 class ProjectSerializer(serializers.ModelSerializer):
     category_display = serializers.CharField(
         source="get_category_display",

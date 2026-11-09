@@ -145,6 +145,50 @@ class ExperienceAPITest(APITestCase):
             [str(newer.pk), str(self.experience.pk)],
         )
 
+    def test_category_and_status_filters_can_be_combined_with_search(self):
+        completed_research = Experience.objects.create(
+            title="Research Fellowship", description="Completed research",
+            category="research", ended_at=datetime(2026, 11, 1, tzinfo=timezone.utc),
+        )
+        volunteer = Experience.objects.create(
+            title="Community Workshop", description="Ongoing community work",
+            category="volunteer",
+        )
+        completed_volunteer = Experience.objects.create(
+            title="Community Event", description="Completed community work",
+            category="volunteer", ended_at=datetime(2026, 11, 1, tzinfo=timezone.utc),
+        )
+        all_ids = {str(item.pk) for item in (
+            self.experience, completed_research, volunteer, completed_volunteer,
+        )}
+        before = self.experience_state()
+        for query, expected in (
+            ({"category": "research"}, {str(self.experience.pk), str(completed_research.pk)}),
+            ({"status": "ongoing"}, {str(self.experience.pk), str(volunteer.pk)}),
+            ({"status": "completed"}, {str(completed_research.pk), str(completed_volunteer.pk)}),
+            ({"category": "research", "status": "completed"}, {str(completed_research.pk)}),
+            ({"title": "  FELLOWSHIP  ", "category": "research", "status": "completed"}, {str(completed_research.pk)}),
+            ({"title": "Research", "category": "volunteer"}, set()),
+            ({"title": "", "category": "", "status": ""}, all_ids),
+        ):
+            with self.subTest(query=query):
+                response = self.client.get(self.list_url, query)
+                self.assertEqual(response.status_code, 200)
+                self.assertEqual({item["id"] for item in response.data}, expected)
+                self.assertEqual(self.experience_state(), before)
+
+    def test_invalid_filters_return_field_errors_without_changing_data(self):
+        before = self.experience_state()
+        for query, field in (
+            ({"category": "invalid-category"}, "category"),
+            ({"status": "invalid-status"}, "status"),
+        ):
+            with self.subTest(query=query):
+                response = self.client.get(self.list_url, query)
+                self.assertEqual(response.status_code, 400)
+                self.assertIn(field, response.data)
+                self.assertEqual(self.experience_state(), before)
+
     def test_missing_experience(self):
         missing_id = uuid.uuid4()
         detail_url = reverse("api:experience-detail", args=[missing_id])

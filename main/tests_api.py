@@ -127,7 +127,7 @@ class ProjectAPITest(APITestCase):
                     response = getattr(self.client, method)(
                         url, payload, format="json",
                     )
-                    self.assertEqual(response.status_code, 403)
+                    self.assertEqual(response.status_code, 401 if user is None else 403)
 
         self.assertEqual(Project.objects.count(), 1)
         self.project.refresh_from_db()
@@ -230,7 +230,7 @@ class ProjectAPITest(APITestCase):
         self.assertEqual(self.client.get(self.detail_url).status_code, 404)
 
     def test_star_requires_login_and_toggles(self):
-        self.assertEqual(self.client.post(self.star_url).status_code, 403)
+        self.assertEqual(self.client.post(self.star_url).status_code, 401)
         self.assertEqual(self.project.starred_by.count(), 0)
 
         self.project.starred_by.add(self.owner)

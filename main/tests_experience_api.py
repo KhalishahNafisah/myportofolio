@@ -217,7 +217,7 @@ class ExperienceAPITest(APITestCase):
             ):
                 with self.subTest(user=user, method=method):
                     response = getattr(self.client, method)(url, payload, format="json")
-                    self.assertEqual(response.status_code, 403)
+                    self.assertEqual(response.status_code, 401 if user is None else 403)
                     self.assertEqual(self.experience_state(), before)
 
     def test_owner_can_create(self):
@@ -432,7 +432,7 @@ class ExperienceAPITest(APITestCase):
         self.assertEqual(saved.starred_by.count(), 0)
 
     def test_star_requires_login_and_uses_current_account(self):
-        self.assertEqual(self.client.post(self.star_url).status_code, 403)
+        self.assertEqual(self.client.post(self.star_url).status_code, 401)
         self.assertEqual(self.experience.starred_by.count(), 0)
 
         self.experience.starred_by.add(self.owner)
